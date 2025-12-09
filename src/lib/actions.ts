@@ -1,13 +1,15 @@
 "use server";
 
 import { v4 as uuidv4 } from "uuid";
-import { redis, TEAM_TTL_SECONDS } from "./redis";
+import { redis, TEAM_INITIAL_TTL_SECONDS, TEAM_ACTIVE_TTL_SECONDS } from "./redis";
+import { realtime } from "./realtime";
 import {
   TeamMemberInputSchema,
   TeamMemberUpdateSchema,
   UUIDSchema,
 } from "./validation";
 import type { Team, TeamMember } from "@/types";
+import z from "zod";
 
 type ActionResult<T> = {
   success: true;
@@ -27,7 +29,7 @@ const createTeam = async (): Promise<ActionResult<string>> => {
     };
 
     await redis.set(`team:${teamId}`, JSON.stringify(team), {
-      ex: TEAM_TTL_SECONDS,
+      ex: TEAM_INITIAL_TTL_SECONDS,
     });
 
     return { success: true, data: teamId };
@@ -60,7 +62,7 @@ const getTeam = async (teamId: string): Promise<Team | null> => {
 const addMember = async (
   teamId: string,
   member: Omit<TeamMember, "id">
-): Promise<ActionResult<Team>> => {
+): Promise<ActionResult<{ team: Team; member: TeamMember }>> => {
   try {
     const uuidResult = UUIDSchema.safeParse(teamId);
     if (!uuidResult.success) {
@@ -86,11 +88,15 @@ const addMember = async (
 
     team.members.push(newMember);
 
+    // Use longer TTL when members are added (2 years)
     await redis.set(`team:${teamId}`, JSON.stringify(team), {
-      ex: TEAM_TTL_SECONDS,
+      ex: TEAM_ACTIVE_TTL_SECONDS,
     });
 
-    return { success: true, data: team };
+    // Emit realtime event to team channel
+    await realtime.channel(`team-${teamId}`).emit("team.memberAdded", newMember);
+
+    return { success: true, data: { team, member: newMember } };
   } catch (error) {
     console.error("Failed to add member:", error);
     return { success: false, error: "Failed to add member" };
@@ -125,9 +131,13 @@ const removeMember = async (
 
     team.members = team.members.filter((m) => m.id !== memberId);
 
+    // Keep the active TTL since team has activity
     await redis.set(`team:${teamId}`, JSON.stringify(team), {
-      ex: TEAM_TTL_SECONDS,
+      ex: TEAM_ACTIVE_TTL_SECONDS,
     });
+
+    // Emit realtime event to team channel
+    await realtime.channel(`team-${teamId}`).emit("team.memberRemoved", { memberId });
 
     return { success: true, data: team };
   } catch (error) {
@@ -170,14 +180,20 @@ const updateMember = async (
       return { success: false, error: "Member not found" };
     }
 
-    team.members[memberIndex] = {
+    const updatedMember = {
       ...team.members[memberIndex],
       ...updateResult.data,
     };
 
+    team.members[memberIndex] = updatedMember;
+
+    // Keep the active TTL since team has activity
     await redis.set(`team:${teamId}`, JSON.stringify(team), {
-      ex: TEAM_TTL_SECONDS,
+      ex: TEAM_ACTIVE_TTL_SECONDS,
     });
+
+    // Emit realtime event to team channel
+    await realtime.channel(`team-${teamId}`).emit("team.memberUpdated", updatedMember);
 
     return { success: true, data: team };
   } catch (error) {
@@ -186,4 +202,78 @@ const updateMember = async (
   }
 };
 
-export { createTeam, getTeam, addMember, removeMember, updateMember };
+const reorderMembers = async (
+  teamId: string,
+  orderedIds: string[]
+): Promise<ActionResult<Team>> => {
+  try {
+    const teamUuidResult = UUIDSchema.safeParse(teamId);
+    if (!teamUuidResult.success) {
+      return { success: false, error: "Invalid team ID" };
+    }
+
+    const idsResult = z.array(UUIDSchema).safeParse(orderedIds);
+    if (!idsResult.success) {
+      return { success: false, error: "Invalid member IDs" };
+    }
+
+    const team = await getTeam(teamId);
+    if (!team) {
+      return { success: false, error: "Team not found" };
+    }
+
+    // Ensure provided IDs match the existing member set
+    const existingIds = new Set(team.members.map((m) => m.id));
+    const providedIds = new Set(orderedIds);
+    if (existingIds.size !== providedIds.size) {
+      return { success: false, error: "Member list mismatch" };
+    }
+    for (const id of existingIds) {
+      if (!providedIds.has(id)) {
+        return { success: false, error: "Member list mismatch" };
+      }
+    }
+
+    // Reorder members to match the provided order
+    const memberMap = new Map(team.members.map((m) => [m.id, m]));
+    team.members = orderedIds.map((id) => memberMap.get(id)!);
+
+    await redis.set(`team:${teamId}`, JSON.stringify(team), {
+      ex: TEAM_ACTIVE_TTL_SECONDS,
+    });
+
+    await realtime.channel(`team-${teamId}`).emit("team.membersReordered", {
+      order: orderedIds,
+    });
+
+    return { success: true, data: team };
+  } catch (error) {
+    console.error("Failed to reorder members:", error);
+    return { success: false, error: "Failed to reorder members" };
+  }
+};
+
+const validateTeam = async (teamId: string): Promise<boolean> => {
+  try {
+    const uuidResult = UUIDSchema.safeParse(teamId);
+    if (!uuidResult.success) {
+      return false;
+    }
+
+    const exists = await redis.exists(`team:${teamId}`);
+    return exists === 1;
+  } catch (error) {
+    console.error("Failed to validate team:", error);
+    return false;
+  }
+};
+
+export {
+  createTeam,
+  getTeam,
+  addMember,
+  removeMember,
+  updateMember,
+  reorderMembers,
+  validateTeam,
+};

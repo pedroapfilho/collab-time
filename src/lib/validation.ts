@@ -25,7 +25,7 @@ const TeamMemberInputSchema = z.object({
 
 const TeamMemberUpdateSchema = TeamMemberInputSchema.partial();
 
-const UUIDSchema = z.string().uuid("Invalid ID format");
+const UUIDSchema = z.uuid("Invalid ID format");
 
 type TeamMemberInput = z.infer<typeof TeamMemberInputSchema>;
 type TeamMemberUpdate = z.infer<typeof TeamMemberUpdateSchema>;

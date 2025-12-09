@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@upstash/realtime':
+        specifier: ^1.0.0
+        version: 1.0.0(@upstash/redis@1.35.7)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(zod@4.1.13)
       '@upstash/redis':
         specifier: ^1.35.7
         version: 1.35.7
@@ -700,6 +703,19 @@ packages:
     resolution: {integrity: sha512-lrW200hZdbfRtztbygyaq/6jP6AKE8qQN2KvPcJ+x7wiD038YtnYtZ82IMNJ69GJibV7bwL3y9FgK+5w/pYt6g==}
     cpu: [x64]
     os: [win32]
+
+  '@upstash/realtime@1.0.0':
+    resolution: {integrity: sha512-PJNm+laOlPTkbVbm8vPge14en8OgiIZIazPUAhAXys0KS8mFIs6ri2/EaL3lhc7GEJIZ9+9kHHgw9gdV9R7oUg==}
+    peerDependencies:
+      '@upstash/redis': '>=1.35.4'
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+      zod: ^3.25.0 || ^4.0.0
+    peerDependenciesMeta:
+      react:
+        optional: true
+      react-dom:
+        optional: true
 
   '@upstash/redis@1.35.7':
     resolution: {integrity: sha512-bdCdKhke+kYUjcLLuGWSeQw7OLuWIx3eyKksyToLBAlGIMX9qiII0ptp8E0y7VFE1yuBxBd/3kSzJ8774Q4g+A==}
@@ -2577,6 +2593,14 @@ snapshots:
 
   '@unrs/resolver-binding-win32-x64-msvc@1.11.1':
     optional: true
+
+  '@upstash/realtime@1.0.0(@upstash/redis@1.35.7)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(zod@4.1.13)':
+    dependencies:
+      '@upstash/redis': 1.35.7
+      zod: 4.1.13
+    optionalDependencies:
+      react: 19.2.1
+      react-dom: 19.2.1(react@19.2.1)
 
   '@upstash/redis@1.35.7':
     dependencies:
