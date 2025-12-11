@@ -330,7 +330,7 @@ const TeamPageClient = ({ team }: TeamPageClientProps) => {
   };
 
   return (
-    <div className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
+    <div className="flex-1 px-4 py-8 sm:px-6 lg:px-8">
       <motion.main
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
