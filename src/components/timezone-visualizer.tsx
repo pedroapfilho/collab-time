@@ -1238,6 +1238,32 @@ const TimezoneVisualizer = ({
 
                         <div className="flex-1">{renderOverlapBar()}</div>
                       </div>
+
+                      {/* Time axis for overlap visualization */}
+                      <div className="flex gap-2 sm:gap-3">
+                        <div className="w-8 shrink-0 sm:w-24" />
+                        <div className="flex flex-1 justify-between">
+                          {TIME_AXIS_HOURS.map((hour, index, arr) => {
+                            const isFirst = index === 0;
+                            const isLast = index === arr.length - 1;
+
+                            return (
+                              <div
+                                key={hour}
+                                className="flex flex-col"
+                                style={{
+                                  alignItems: isFirst ? "flex-start" : isLast ? "flex-end" : "center",
+                                }}
+                              >
+                                <div className="mb-1 h-1.5 w-px bg-neutral-300 dark:bg-neutral-600" />
+                                <span className="whitespace-nowrap text-[10px] tabular-nums text-neutral-600 dark:text-neutral-400 sm:text-xs">
+                                  {formatHour(hour % HOURS_IN_DAY)}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
                   )}
 
