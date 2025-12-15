@@ -12,6 +12,7 @@ const SCROLL_AREA_MAX_HEIGHT = 120;
 type TeamInsightsProps = {
   members: TeamMember[];
   groups?: TeamGroup[];
+  currentUserId?: string | null;
 };
 
 // No-op subscribe function for useSyncExternalStore when no subscriptions are needed
@@ -35,7 +36,7 @@ type MemberStatus = {
   hoursUntilEnd: number | null;
 };
 
-const TeamInsights = ({ members, groups = [] }: TeamInsightsProps) => {
+const TeamInsights = ({ members, groups = [], currentUserId }: TeamInsightsProps) => {
   const viewerTimezone = useClientValue(() => getUserTimezone(), "");
   const tick = useSyncExternalStore(
     tickSubscribe,
@@ -97,25 +98,42 @@ const TeamInsights = ({ members, groups = [] }: TeamInsightsProps) => {
     });
   }, [members, viewerTimezone, tick]);
 
+  // Helper to sort with current user first
+  const sortWithCurrentUserFirst = useCallback(
+    <T extends { member: TeamMember }>(items: T[]): T[] => {
+      if (!currentUserId) return items;
+      return [...items].sort((a, b) => {
+        if (a.member.id === currentUserId) return -1;
+        if (b.member.id === currentUserId) return 1;
+        return 0;
+      });
+    },
+    [currentUserId]
+  );
+
   const onlineMembers = useMemo(
-    () => memberStatuses.filter((s) => s.isWorking),
-    [memberStatuses]
+    () => sortWithCurrentUserFirst(memberStatuses.filter((s) => s.isWorking)),
+    [memberStatuses, sortWithCurrentUserFirst]
   );
 
   const comingSoonMembers = useMemo(
     () =>
-      memberStatuses
-        .filter((s) => !s.isWorking && s.hoursUntilStart !== null && s.hoursUntilStart <= SOON_THRESHOLD_HOURS)
-        .sort((a, b) => (a.hoursUntilStart ?? 0) - (b.hoursUntilStart ?? 0)),
-    [memberStatuses]
+      sortWithCurrentUserFirst(
+        memberStatuses
+          .filter((s) => !s.isWorking && s.hoursUntilStart !== null && s.hoursUntilStart <= SOON_THRESHOLD_HOURS)
+          .sort((a, b) => (a.hoursUntilStart ?? 0) - (b.hoursUntilStart ?? 0))
+      ),
+    [memberStatuses, sortWithCurrentUserFirst]
   );
 
   const leavingSoonMembers = useMemo(
     () =>
-      memberStatuses
-        .filter((s) => s.isWorking && s.hoursUntilEnd !== null && s.hoursUntilEnd <= SOON_THRESHOLD_HOURS)
-        .sort((a, b) => (a.hoursUntilEnd ?? 0) - (b.hoursUntilEnd ?? 0)),
-    [memberStatuses]
+      sortWithCurrentUserFirst(
+        memberStatuses
+          .filter((s) => s.isWorking && s.hoursUntilEnd !== null && s.hoursUntilEnd <= SOON_THRESHOLD_HOURS)
+          .sort((a, b) => (a.hoursUntilEnd ?? 0) - (b.hoursUntilEnd ?? 0))
+      ),
+    [memberStatuses, sortWithCurrentUserFirst]
   );
 
   const getGroupName = useCallback(
@@ -156,14 +174,22 @@ const TeamInsights = ({ members, groups = [] }: TeamInsightsProps) => {
               <div className="flex flex-wrap gap-1.5 pr-2">
                 {onlineMembers.map(({ member }) => {
                   const groupName = getGroupName(member.groupId);
+                  const isCurrentUser = member.id === currentUserId;
                   return (
                     <div
                       key={member.id}
-                      className="flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-xs font-medium text-neutral-700 shadow-sm dark:bg-neutral-700 dark:text-neutral-200"
+                      className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium shadow-sm ${
+                        isCurrentUser
+                          ? "bg-blue-100 text-blue-700 ring-1 ring-blue-300 dark:bg-blue-900/30 dark:text-blue-300 dark:ring-blue-700"
+                          : "bg-white text-neutral-700 dark:bg-neutral-700 dark:text-neutral-200"
+                      }`}
                       title={groupName ? `${member.name} (${groupName})` : member.name}
                     >
                       <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
                       {member.name}
+                      {isCurrentUser && (
+                        <span className="text-[10px] text-blue-600 dark:text-blue-400">(You)</span>
+                      )}
                     </div>
                   );
                 })}
@@ -192,19 +218,33 @@ const TeamInsights = ({ members, groups = [] }: TeamInsightsProps) => {
           {comingSoonMembers.length > 0 ? (
             <ScrollArea style={{ maxHeight: SCROLL_AREA_MAX_HEIGHT }}>
               <div className="flex flex-col gap-1.5 pr-2">
-                {comingSoonMembers.map(({ member, hoursUntilStart }) => (
-                  <div
-                    key={member.id}
-                    className="flex items-center justify-between rounded-lg bg-white px-2.5 py-1.5 shadow-sm dark:bg-neutral-700"
-                  >
-                    <span className="text-xs font-medium text-neutral-700 dark:text-neutral-200">
-                      {member.name}
-                    </span>
-                    <span className="text-xs tabular-nums text-amber-600 dark:text-amber-400">
-                      in {hoursUntilStart}h
-                    </span>
-                  </div>
-                ))}
+                {comingSoonMembers.map(({ member, hoursUntilStart }) => {
+                  const isCurrentUser = member.id === currentUserId;
+                  return (
+                    <div
+                      key={member.id}
+                      className={`flex items-center justify-between rounded-lg px-2.5 py-1.5 shadow-sm ${
+                        isCurrentUser
+                          ? "bg-blue-100 ring-1 ring-blue-300 dark:bg-blue-900/30 dark:ring-blue-700"
+                          : "bg-white dark:bg-neutral-700"
+                      }`}
+                    >
+                      <span className={`text-xs font-medium ${
+                        isCurrentUser
+                          ? "text-blue-700 dark:text-blue-300"
+                          : "text-neutral-700 dark:text-neutral-200"
+                      }`}>
+                        {member.name}
+                        {isCurrentUser && (
+                          <span className="ml-1 text-[10px] text-blue-600 dark:text-blue-400">(You)</span>
+                        )}
+                      </span>
+                      <span className="text-xs tabular-nums text-amber-600 dark:text-amber-400">
+                        {isCurrentUser ? `Your day starts in ${hoursUntilStart}h` : `in ${hoursUntilStart}h`}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </ScrollArea>
           ) : (
@@ -230,19 +270,33 @@ const TeamInsights = ({ members, groups = [] }: TeamInsightsProps) => {
           {leavingSoonMembers.length > 0 ? (
             <ScrollArea style={{ maxHeight: SCROLL_AREA_MAX_HEIGHT }}>
               <div className="flex flex-col gap-1.5 pr-2">
-                {leavingSoonMembers.map(({ member, hoursUntilEnd }) => (
-                  <div
-                    key={member.id}
-                    className="flex items-center justify-between rounded-lg bg-white px-2.5 py-1.5 shadow-sm dark:bg-neutral-700"
-                  >
-                    <span className="text-xs font-medium text-neutral-700 dark:text-neutral-200">
-                      {member.name}
-                    </span>
-                    <span className="text-xs tabular-nums text-blue-600 dark:text-blue-400">
-                      {hoursUntilEnd}h left
-                    </span>
-                  </div>
-                ))}
+                {leavingSoonMembers.map(({ member, hoursUntilEnd }) => {
+                  const isCurrentUser = member.id === currentUserId;
+                  return (
+                    <div
+                      key={member.id}
+                      className={`flex items-center justify-between rounded-lg px-2.5 py-1.5 shadow-sm ${
+                        isCurrentUser
+                          ? "bg-blue-100 ring-1 ring-blue-300 dark:bg-blue-900/30 dark:ring-blue-700"
+                          : "bg-white dark:bg-neutral-700"
+                      }`}
+                    >
+                      <span className={`text-xs font-medium ${
+                        isCurrentUser
+                          ? "text-blue-700 dark:text-blue-300"
+                          : "text-neutral-700 dark:text-neutral-200"
+                      }`}>
+                        {member.name}
+                        {isCurrentUser && (
+                          <span className="ml-1 text-[10px] text-blue-600 dark:text-blue-400">(You)</span>
+                        )}
+                      </span>
+                      <span className="text-xs tabular-nums text-blue-600 dark:text-blue-400">
+                        {isCurrentUser ? `Your day ends in ${hoursUntilEnd}h` : `${hoursUntilEnd}h left`}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </ScrollArea>
           ) : (
