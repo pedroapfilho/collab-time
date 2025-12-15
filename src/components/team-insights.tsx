@@ -4,10 +4,10 @@ import { useCallback, useMemo, useSyncExternalStore } from "react";
 import { Circle, Clock, Sunrise, Users } from "lucide-react";
 import type { TeamGroup, TeamMember } from "@/types";
 import { getUserTimezone, isCurrentlyWorking, convertHourToTimezone } from "@/lib/timezones";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const SOON_THRESHOLD_HOURS = 2;
-const MAX_ONLINE_DISPLAY = 5;
-const MAX_SOON_DISPLAY = 3;
+const SCROLL_AREA_MAX_HEIGHT = 120;
 
 type TeamInsightsProps = {
   members: TeamMember[];
@@ -152,26 +152,23 @@ const TeamInsights = ({ members, groups = [] }: TeamInsightsProps) => {
             </span>
           </div>
           {onlineMembers.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5">
-              {onlineMembers.slice(0, MAX_ONLINE_DISPLAY).map(({ member }) => {
-                const groupName = getGroupName(member.groupId);
-                return (
-                  <div
-                    key={member.id}
-                    className="flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-xs font-medium text-neutral-700 shadow-sm dark:bg-neutral-700 dark:text-neutral-200"
-                    title={groupName ? `${member.name} (${groupName})` : member.name}
-                  >
-                    <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-                    {member.name}
-                  </div>
-                );
-              })}
-              {onlineMembers.length > MAX_ONLINE_DISPLAY && (
-                <div className="flex items-center rounded-full bg-white px-2.5 py-1 text-xs font-medium text-neutral-500 shadow-sm dark:bg-neutral-700 dark:text-neutral-400">
-                  +{onlineMembers.length - MAX_ONLINE_DISPLAY} more
-                </div>
-              )}
-            </div>
+            <ScrollArea style={{ maxHeight: SCROLL_AREA_MAX_HEIGHT }}>
+              <div className="flex flex-wrap gap-1.5 pr-2">
+                {onlineMembers.map(({ member }) => {
+                  const groupName = getGroupName(member.groupId);
+                  return (
+                    <div
+                      key={member.id}
+                      className="flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-xs font-medium text-neutral-700 shadow-sm dark:bg-neutral-700 dark:text-neutral-200"
+                      title={groupName ? `${member.name} (${groupName})` : member.name}
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                      {member.name}
+                    </div>
+                  );
+                })}
+              </div>
+            </ScrollArea>
           ) : (
             <p className="text-xs text-neutral-500 dark:text-neutral-400">
               No one is currently working
@@ -193,26 +190,23 @@ const TeamInsights = ({ members, groups = [] }: TeamInsightsProps) => {
             </span>
           </div>
           {comingSoonMembers.length > 0 ? (
-            <div className="flex flex-col gap-1.5">
-              {comingSoonMembers.slice(0, MAX_SOON_DISPLAY).map(({ member, hoursUntilStart }) => (
-                <div
-                  key={member.id}
-                  className="flex items-center justify-between rounded-lg bg-white px-2.5 py-1.5 shadow-sm dark:bg-neutral-700"
-                >
-                  <span className="text-xs font-medium text-neutral-700 dark:text-neutral-200">
-                    {member.name}
-                  </span>
-                  <span className="text-xs tabular-nums text-amber-600 dark:text-amber-400">
-                    in {hoursUntilStart}h
-                  </span>
-                </div>
-              ))}
-              {comingSoonMembers.length > MAX_SOON_DISPLAY && (
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                  +{comingSoonMembers.length - MAX_SOON_DISPLAY} more starting soon
-                </p>
-              )}
-            </div>
+            <ScrollArea style={{ maxHeight: SCROLL_AREA_MAX_HEIGHT }}>
+              <div className="flex flex-col gap-1.5 pr-2">
+                {comingSoonMembers.map(({ member, hoursUntilStart }) => (
+                  <div
+                    key={member.id}
+                    className="flex items-center justify-between rounded-lg bg-white px-2.5 py-1.5 shadow-sm dark:bg-neutral-700"
+                  >
+                    <span className="text-xs font-medium text-neutral-700 dark:text-neutral-200">
+                      {member.name}
+                    </span>
+                    <span className="text-xs tabular-nums text-amber-600 dark:text-amber-400">
+                      in {hoursUntilStart}h
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
           ) : (
             <p className="text-xs text-neutral-500 dark:text-neutral-400">
               No one starting in the next {SOON_THRESHOLD_HOURS} hours
@@ -234,26 +228,23 @@ const TeamInsights = ({ members, groups = [] }: TeamInsightsProps) => {
             </span>
           </div>
           {leavingSoonMembers.length > 0 ? (
-            <div className="flex flex-col gap-1.5">
-              {leavingSoonMembers.slice(0, MAX_SOON_DISPLAY).map(({ member, hoursUntilEnd }) => (
-                <div
-                  key={member.id}
-                  className="flex items-center justify-between rounded-lg bg-white px-2.5 py-1.5 shadow-sm dark:bg-neutral-700"
-                >
-                  <span className="text-xs font-medium text-neutral-700 dark:text-neutral-200">
-                    {member.name}
-                  </span>
-                  <span className="text-xs tabular-nums text-blue-600 dark:text-blue-400">
-                    {hoursUntilEnd}h left
-                  </span>
-                </div>
-              ))}
-              {leavingSoonMembers.length > MAX_SOON_DISPLAY && (
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                  +{leavingSoonMembers.length - MAX_SOON_DISPLAY} more wrapping up
-                </p>
-              )}
-            </div>
+            <ScrollArea style={{ maxHeight: SCROLL_AREA_MAX_HEIGHT }}>
+              <div className="flex flex-col gap-1.5 pr-2">
+                {leavingSoonMembers.map(({ member, hoursUntilEnd }) => (
+                  <div
+                    key={member.id}
+                    className="flex items-center justify-between rounded-lg bg-white px-2.5 py-1.5 shadow-sm dark:bg-neutral-700"
+                  >
+                    <span className="text-xs font-medium text-neutral-700 dark:text-neutral-200">
+                      {member.name}
+                    </span>
+                    <span className="text-xs tabular-nums text-blue-600 dark:text-blue-400">
+                      {hoursUntilEnd}h left
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
           ) : (
             <p className="text-xs text-neutral-500 dark:text-neutral-400">
               No one ending in the next {SOON_THRESHOLD_HOURS} hours
