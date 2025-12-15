@@ -923,7 +923,7 @@ const TimezoneVisualizer = ({
                   {overlapLabel}
                 </div>
                 {availableByTeam.size > 0 && (
-                  <div className="mt-1.5 flex flex-col gap-4">
+                  <div className="mt-1.5 mb-3 flex flex-col gap-2">
                     <span className="text-[10px] font-medium uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
                       Available by team
                     </span>
@@ -936,7 +936,7 @@ const TimezoneVisualizer = ({
                   </div>
                 )}
                 {!isFullOverlap && unavailableByTeam.size > 0 && (
-                  <div className="mt-1.5 flex flex-col gap-4">
+                  <div className="mt-3 flex flex-col gap-2">
                     <span className="text-[10px] font-medium uppercase tracking-wide text-red-600 dark:text-red-400">
                       Unavailable
                     </span>
