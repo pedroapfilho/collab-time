@@ -20,7 +20,6 @@ import { MemberCard } from "@/components/member-card";
 import { ModeToggle } from "@/components/mode-toggle";
 import { TeamInsights } from "@/components/team-insights";
 import { TimezoneVisualizer } from "@/components/timezone-visualizer";
-import { useCurrentTeamUser } from "@/hooks/use-current-team-user";
 import { useVisitedTeams } from "@/hooks/use-visited-teams";
 import { useRealtime } from "@/lib/realtime-client";
 import { updateTeamName as updateTeamNameAction } from "@/lib/actions";
@@ -49,14 +48,6 @@ const TeamPageClient = ({ team }: TeamPageClientProps) => {
   const [hasCopied, setHasCopied] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const { saveVisitedTeam } = useVisitedTeams();
-  const {
-    currentUser,
-    setCurrentUser,
-    isCurrentUser,
-    suggestedUser,
-    dismissSuggestion,
-    acceptSuggestion,
-  } = useCurrentTeamUser(team.id, members);
   const [teamName, setTeamName] = useState(team.name);
   const lastRemovalRef = useRef<{ id: string; ts: number }>({ id: "", ts: 0 });
   const previousNameRef = useRef(team.name);
@@ -65,24 +56,6 @@ const TeamPageClient = ({ team }: TeamPageClientProps) => {
   useEffect(() => {
     localStorage.setItem(COLLAPSED_GROUPS_KEY, JSON.stringify([...collapsedGroups]));
   }, [collapsedGroups]);
-
-  // Show suggestion toast when a single timezone match is found
-  useEffect(() => {
-    if (suggestedUser) {
-      toast(`Are you ${suggestedUser.name}?`, {
-        id: `suggestion-${suggestedUser.id}`,
-        duration: Infinity,
-        action: {
-          label: "Yes",
-          onClick: () => acceptSuggestion(suggestedUser.id),
-        },
-        cancel: {
-          label: "No",
-          onClick: () => dismissSuggestion(suggestedUser.id),
-        },
-      });
-    }
-  }, [suggestedUser, acceptSuggestion, dismissSuggestion]);
 
   const toggleGroupCollapse = useCallback((groupId: string) => {
     setCollapsedGroups((prev) => {
@@ -452,7 +425,7 @@ const TeamPageClient = ({ team }: TeamPageClientProps) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
           >
-            <TeamInsights members={orderedMembers} groups={groups} currentUserId={currentUser?.id} />
+            <TeamInsights members={orderedMembers} groups={groups} />
           </motion.section>
         )}
 
@@ -479,7 +452,6 @@ const TeamPageClient = ({ team }: TeamPageClientProps) => {
                 groups={groups}
                 collapsedGroupIds={collapsedGroupIds}
                 onToggleGroupCollapse={toggleGroupCollapse}
-                currentUserId={currentUser?.id}
               />
             </div>
           </motion.section>
@@ -512,8 +484,6 @@ const TeamPageClient = ({ team }: TeamPageClientProps) => {
                   groups={groups}
                   onMemberRemoved={handleMemberRemoved}
                   onMemberUpdated={handleMemberUpdated}
-                  isCurrentUser={isCurrentUser(member.id)}
-                  onSetAsCurrentUser={setCurrentUser}
                 />
               ))}
             </div>

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Check, Pencil, Trash2, User, X } from "lucide-react";
+import { Pencil, Trash2, X } from "lucide-react";
 import type { TeamGroup, TeamMember } from "@/types";
 import { removeMember, updateMember } from "@/lib/actions";
 import { Button } from "@/components/ui/button";
@@ -29,8 +29,6 @@ type MemberCardProps = {
   groups: TeamGroup[];
   onMemberRemoved: (memberId: string) => void;
   onMemberUpdated: (member: TeamMember) => void;
-  isCurrentUser?: boolean;
-  onSetAsCurrentUser?: (memberId: string) => void;
 };
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
@@ -41,8 +39,6 @@ const MemberCard = ({
   groups,
   onMemberRemoved,
   onMemberUpdated,
-  isCurrentUser = false,
-  onSetAsCurrentUser,
 }: MemberCardProps) => {
   const [isPending, startTransition] = useTransition();
   const [isAvailable, setIsAvailable] = useState(false);
@@ -287,13 +283,6 @@ const MemberCard = ({
     endDrag();
   };
 
-  const handleSetAsMe = () => {
-    if (onSetAsCurrentUser) {
-      onSetAsCurrentUser(member.id);
-      toast.success(`Set as ${member.name}`);
-    }
-  };
-
   return (
     <div
       className="group flex cursor-grab flex-col gap-3 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm transition-all hover:border-neutral-300 hover:shadow-md active:cursor-grabbing dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-700"
@@ -350,26 +339,6 @@ const MemberCard = ({
 
         {/* Actions */}
         <div className="flex shrink-0 items-center gap-1">
-          {onSetAsCurrentUser && (
-            isCurrentUser ? (
-              <div
-                className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
-                title="This is you"
-              >
-                <Check className="h-4 w-4" />
-              </div>
-            ) : (
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={handleSetAsMe}
-                className="text-neutral-400 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
-                aria-label={`Set as me (${member.name})`}
-              >
-                <User className="h-4 w-4" />
-              </Button>
-            )
-          )}
           <Button
             variant="ghost"
             size="icon-sm"

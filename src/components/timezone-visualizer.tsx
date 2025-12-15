@@ -52,7 +52,6 @@ type TimezoneVisualizerProps = {
   groups?: TeamGroup[];
   collapsedGroupIds?: string[];
   onToggleGroupCollapse?: (groupId: string) => void;
-  currentUserId?: string | null;
 };
 
 type MemberRow = {
@@ -431,7 +430,6 @@ const TimezoneVisualizer = ({
   groups = [],
   collapsedGroupIds = [],
   onToggleGroupCollapse,
-  currentUserId,
 }: TimezoneVisualizerProps) => {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
@@ -829,13 +827,12 @@ const TimezoneVisualizer = ({
 
   const renderMemberAvatar = (member: TeamMember, dayOffset: number, isSelected: boolean) => {
     const dayOffsetLabel = formatDayOffset(dayOffset);
-    const isCurrentUser = currentUserId === member.id;
 
     const content = (
       <div className="flex h-8 items-center justify-center sm:justify-start sm:gap-2">
         <div className="relative">
           <div
-            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-[10px] font-semibold text-white dark:bg-neutral-100 dark:text-neutral-900 sm:h-7 sm:w-7 sm:text-xs ${isCurrentUser ? "ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-neutral-900" : ""}`}
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-[10px] font-semibold text-white dark:bg-neutral-100 dark:text-neutral-900 sm:h-7 sm:w-7 sm:text-xs"
             title={member.name}
           >
             {member.name.charAt(0).toUpperCase()}
@@ -854,9 +851,6 @@ const TimezoneVisualizer = ({
           title={member.name}
         >
           {member.name}
-          {isCurrentUser && (
-            <span className="ml-1 text-xs text-blue-600 dark:text-blue-400">(You)</span>
-          )}
         </span>
       </div>
     );
@@ -876,23 +870,6 @@ const TimezoneVisualizer = ({
   };
 
   const renderOverlapBar = () => {
-    // Check if current user is part of the comparison
-    const isCurrentUserInComparison = currentUserId
-      ? validSelections.some((sel) => {
-          if (sel.type === "member" && sel.id === currentUserId) return true;
-          if (sel.type === "group") {
-            const member = members.find((m) => m.id === currentUserId);
-            if (member?.groupId === sel.id) return true;
-          }
-          return false;
-        })
-      : false;
-
-    // Get current user's working hours for the visualization
-    const currentUserRow = currentUserId
-      ? memberRows.find((r) => r.member.id === currentUserId)
-      : null;
-
     return (
       <div className="flex h-8 gap-px overflow-hidden rounded-lg bg-neutral-200 p-1 dark:bg-neutral-900">
         {Array.from({ length: HOURS_IN_DAY }, (_, hour) => {
@@ -900,18 +877,11 @@ const TimezoneVisualizer = ({
           const isPartialOverlap = partialOverlapHours[hour];
           const hasAnyOverlap = isFullOverlap || isPartialOverlap;
 
-          // Check if current user is unavailable at this hour
-          const isCurrentUserUnavailable =
-            isCurrentUserInComparison && currentUserRow && !currentUserRow.hours[hour];
-
-          // Determine color: purple if overlap exists but current user unavailable
-          const colorClass = hasAnyOverlap && isCurrentUserUnavailable
-            ? "bg-purple-500 dark:bg-purple-400"
-            : isFullOverlap
-              ? "bg-emerald-500 dark:bg-emerald-400"
-              : isPartialOverlap
-                ? "bg-amber-500 dark:bg-amber-400"
-                : "bg-neutral-300 dark:bg-neutral-700";
+          const colorClass = isFullOverlap
+            ? "bg-emerald-500 dark:bg-emerald-400"
+            : isPartialOverlap
+              ? "bg-amber-500 dark:bg-amber-400"
+              : "bg-neutral-300 dark:bg-neutral-700";
 
           if (!hasAnyOverlap) {
             return (
@@ -944,10 +914,6 @@ const TimezoneVisualizer = ({
             }
           }
 
-          // Format member names with "(You)" suffix for current user
-          const formatMemberName = (m: TeamMember) =>
-            m.id === currentUserId ? `${m.name} (You)` : m.name;
-
           return (
             <Tooltip key={hour}>
               <TooltipTrigger asChild>
@@ -959,7 +925,6 @@ const TimezoneVisualizer = ({
                 </div>
                 <div className="text-xs text-neutral-500 dark:text-neutral-400">
                   {overlapLabel}
-                  {isCurrentUserUnavailable && " (you're unavailable)"}
                 </div>
                 {allAvailable.length > 0 && (
                   <div className="mt-1.5 flex flex-col gap-0.5">
@@ -967,17 +932,17 @@ const TimezoneVisualizer = ({
                       Available
                     </span>
                     <span className="text-xs text-neutral-800 dark:text-neutral-200">
-                      {allAvailable.map(formatMemberName).join(", ")}
+                      {allAvailable.map((m) => m.name).join(", ")}
                     </span>
                   </div>
                 )}
-                {(isPartialOverlap || isCurrentUserUnavailable) && allUnavailable.length > 0 && (
+                {isPartialOverlap && allUnavailable.length > 0 && (
                   <div className="mt-1.5 flex flex-col gap-0.5">
                     <span className="text-[10px] font-medium uppercase tracking-wide text-red-600 dark:text-red-400">
                       Unavailable
                     </span>
                     <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                      {allUnavailable.map(formatMemberName).join(", ")}
+                      {allUnavailable.map((m) => m.name).join(", ")}
                     </span>
                   </div>
                 )}
@@ -1011,18 +976,6 @@ const TimezoneVisualizer = ({
   };
 
   const renderLegend = () => {
-    // Check if current user is part of the comparison for showing the purple legend
-    const isCurrentUserInComparison = currentUserId
-      ? validSelections.some((sel) => {
-          if (sel.type === "member" && sel.id === currentUserId) return true;
-          if (sel.type === "group") {
-            const member = members.find((m) => m.id === currentUserId);
-            if (member?.groupId === sel.id) return true;
-          }
-          return false;
-        })
-      : false;
-
     return (
       <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-neutral-500 dark:text-neutral-400">
         <div className="flex items-center gap-1.5">
@@ -1039,12 +992,6 @@ const TimezoneVisualizer = ({
               <div className="flex items-center gap-1.5">
                 <div className="h-3 w-3 rounded bg-amber-500 dark:bg-amber-400" />
                 <span>Partial overlap</span>
-              </div>
-            )}
-            {isCurrentUserInComparison && (
-              <div className="flex items-center gap-1.5">
-                <div className="h-3 w-3 rounded bg-purple-500 dark:bg-purple-400" />
-                <span>You unavailable</span>
               </div>
             )}
           </>
