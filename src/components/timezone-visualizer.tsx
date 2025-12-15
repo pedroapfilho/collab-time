@@ -288,51 +288,6 @@ const MemberTimelineRow = memo(function MemberTimelineRow({
   );
 });
 
-type HoverTooltipProps = {
-  tooltipX: ReturnType<typeof useMotionValue<number>>;
-  tooltipOpacity: ReturnType<typeof useMotionValue<number>>;
-  hoverHourRef: React.RefObject<number | null>;
-};
-
-const HoverTooltip = memo(function HoverTooltip({
-  tooltipX,
-  tooltipOpacity,
-  hoverHourRef,
-}: HoverTooltipProps) {
-  const textRef = useRef<HTMLSpanElement>(null);
-  const lastHourRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    let animationId: number;
-
-    const updateText = () => {
-      const currentHour = hoverHourRef.current;
-
-      if (textRef.current && currentHour !== lastHourRef.current) {
-        lastHourRef.current = currentHour;
-        textRef.current.textContent = currentHour !== null ? formatHour(currentHour) : "";
-      }
-
-      animationId = requestAnimationFrame(updateText);
-    };
-
-    animationId = requestAnimationFrame(updateText);
-    return () => cancelAnimationFrame(animationId);
-  }, [hoverHourRef]);
-
-  return (
-    <motion.div
-      className="pointer-events-none absolute z-50 -translate-x-1/2 rounded-md border border-neutral-200 bg-white px-2.5 py-1.5 text-xs ring-1 ring-neutral-950/5 dark:border-neutral-700 dark:bg-neutral-800 dark:ring-white/10"
-      style={{ left: tooltipX, top: 0, opacity: tooltipOpacity }}
-    >
-      <span
-        ref={textRef}
-        className="font-medium tabular-nums text-neutral-900 dark:text-neutral-100"
-      />
-    </motion.div>
-  );
-});
-
 type GroupHeaderProps = {
   group: TeamGroup;
   rowCount: number;
@@ -441,13 +396,10 @@ const TimezoneVisualizer = ({
   const isHoveringRef = useRef(false);
   const selectedBlockRef = useRef<number | null>(null);
   const selectedTimeBlockTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const hoverHourRef = useRef<number | null>(null);
 
   // ---- Motion Values (for off-thread animations) ----
   const lineX = useMotionValue(0);
   const lineOpacity = useMotionValue(0);
-  const tooltipX = useMotionValue(0);
-  const tooltipOpacity = useMotionValue(0);
 
   // ---- State ----
   const [isComparing, setIsComparing] = useState(false);
@@ -709,22 +661,14 @@ const TimezoneVisualizer = ({
 
       const rect = timelineRef.current.getBoundingClientRect();
       const containerRect = sectionsContainerRef.current.getBoundingClientRect();
-      const x = e.clientX - rect.left;
       const relativeX = e.clientX - containerRect.left;
-      const percentage = x / rect.width;
-      const hour = Math.floor(percentage * HOURS_IN_DAY);
-      const clampedHour = Math.max(0, Math.min(HOURS_IN_DAY - 1, hour));
 
       lineX.set(relativeX);
-      tooltipX.set(x);
 
       if (!isHoveringRef.current) {
         isHoveringRef.current = true;
         animate(lineOpacity, 1, { duration: 0.1 });
-        animate(tooltipOpacity, 1, { duration: 0.1 });
       }
-
-      hoverHourRef.current = clampedHour;
 
       if (lineDebounceRef.current) {
         clearTimeout(lineDebounceRef.current);
@@ -732,15 +676,13 @@ const TimezoneVisualizer = ({
 
       lineDebounceRef.current = setTimeout(() => {
         animate(lineOpacity, 0, { duration: 0.2 });
-        animate(tooltipOpacity, 0, { duration: 0.2 });
       }, HOVER_HIDE_DELAY_MS);
     },
-    [lineX, tooltipX, lineOpacity, tooltipOpacity]
+    [lineX, lineOpacity]
   );
 
   const handleMouseLeave = useCallback(() => {
     isHoveringRef.current = false;
-    hoverHourRef.current = null;
 
     if (lineDebounceRef.current) {
       clearTimeout(lineDebounceRef.current);
@@ -748,8 +690,7 @@ const TimezoneVisualizer = ({
     }
 
     animate(lineOpacity, 0, { duration: 0.15 });
-    animate(tooltipOpacity, 0, { duration: 0.15 });
-  }, [lineOpacity, tooltipOpacity]);
+  }, [lineOpacity]);
 
   const closeComparePanel = useCallback(() => {
     setIsComparing(false);
@@ -1019,12 +960,6 @@ const TimezoneVisualizer = ({
           <motion.div
             className="pointer-events-none absolute inset-y-0 z-30 w-px bg-neutral-400/60 dark:bg-neutral-500/60"
             style={{ left: lineX, opacity: lineOpacity }}
-          />
-
-          <HoverTooltip
-            tooltipX={tooltipX}
-            tooltipOpacity={tooltipOpacity}
-            hoverHourRef={hoverHourRef}
           />
 
           {groupedSections.map((section, sectionIndex) => {
