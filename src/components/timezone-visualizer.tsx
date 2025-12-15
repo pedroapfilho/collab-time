@@ -1194,9 +1194,6 @@ const TimezoneVisualizer = ({
                                 disabled={isAlreadySelected}
                               >
                                 {member.name}
-                                {isAlreadySelected && (
-                                  <Check className="ml-auto h-3 w-3 text-neutral-400" />
-                                )}
                               </SelectItem>
                             );
                           })}
@@ -1216,19 +1213,16 @@ const TimezoneVisualizer = ({
                                   return (
                                     <SelectItem
                                       key={`group:${group.id}`}
-                                      value={serializeSelection(sel)}
-                                      disabled={isAlreadySelected}
-                                    >
-                                      <span className="flex items-center gap-2">
-                                        <Users className="h-3 w-3" />
-                                        {group.name}
-                                      </span>
-                                      {isAlreadySelected && (
-                                        <Check className="ml-auto h-3 w-3 text-neutral-400" />
-                                      )}
-                                    </SelectItem>
-                                  );
-                                })}
+                                    value={serializeSelection(sel)}
+                                    disabled={isAlreadySelected}
+                                  >
+                                    <span className="flex items-center gap-2">
+                                      <Users className="h-3 w-3" />
+                                      {group.name}
+                                    </span>
+                                  </SelectItem>
+                                );
+                              })}
                             </SelectGroup>
                           </>
                         )}
