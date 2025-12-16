@@ -32,7 +32,10 @@ const GroupHeader = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editingName, setEditingName] = useState("");
   const [isDragOver, setIsDragOver] = useState(false);
-  const { isDragging } = useDrag();
+  const { isDragging, draggedMemberGroupId } = useDrag();
+
+  // Check if the member being dragged is already in this group
+  const isCurrentGroup = isDragging && draggedMemberGroupId === group.id;
 
   const handleStartEditing = useCallback(() => {
     setEditingName(group.name);
@@ -78,6 +81,10 @@ const GroupHeader = ({
   };
 
   const handleDragOver = (e: React.DragEvent) => {
+    if (isCurrentGroup) {
+      e.dataTransfer.dropEffect = "none";
+      return;
+    }
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
     setIsDragOver(true);
@@ -100,11 +107,13 @@ const GroupHeader = ({
     <div
       className={cn(
         "group flex h-full min-h-[180px] flex-col rounded-2xl border-2 p-4 transition-all",
-        isDragOver
-          ? "border-neutral-900 bg-neutral-200 dark:border-neutral-100 dark:bg-neutral-700"
-          : isDragging
-            ? "border-dashed border-neutral-400 bg-neutral-100 dark:border-neutral-500 dark:bg-neutral-800"
-            : "border-transparent bg-neutral-100 dark:bg-neutral-800"
+        isCurrentGroup
+          ? "cursor-not-allowed border-transparent bg-neutral-100 opacity-50 dark:bg-neutral-800"
+          : isDragOver
+            ? "border-neutral-900 bg-neutral-200 dark:border-neutral-100 dark:bg-neutral-700"
+            : isDragging
+              ? "border-dashed border-neutral-400 bg-neutral-100 dark:border-neutral-500 dark:bg-neutral-800"
+              : "border-transparent bg-neutral-100 dark:bg-neutral-800"
       )}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}

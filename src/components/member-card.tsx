@@ -78,7 +78,7 @@ const MemberCard = ({
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.setData("text/plain", member.id);
     e.dataTransfer.effectAllowed = "move";
-    startDrag();
+    startDrag(member.groupId);
   };
 
   const handleDragEnd = () => {
