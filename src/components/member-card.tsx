@@ -12,7 +12,7 @@ import {
   formatTimezoneLabel,
   isCurrentlyWorking,
 } from "@/lib/timezones";
-import { formatHour } from "@/lib/utils";
+import { cn, formatHour } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -51,7 +51,23 @@ const MemberCard = ({
   );
   const [workingHoursEnd, setWorkingHoursEnd] = useState(member.workingHoursEnd);
   const [groupId, setGroupId] = useState<string | undefined>(member.groupId);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
   const { startDrag, endDrag } = useDrag();
+
+  // Detect touch device to disable dragging on mobile
+  useEffect(() => {
+    const checkTouchDevice = () => {
+      setIsTouchDevice(
+        "ontouchstart" in window ||
+          navigator.maxTouchPoints > 0 ||
+          window.matchMedia("(pointer: coarse)").matches
+      );
+    };
+    checkTouchDevice();
+    // Re-check on resize in case of device mode changes in dev tools
+    window.addEventListener("resize", checkTouchDevice);
+    return () => window.removeEventListener("resize", checkTouchDevice);
+  }, []);
 
   // Sync local form state when member prop updates (e.g., via realtime)
   useEffect(() => {
@@ -283,12 +299,17 @@ const MemberCard = ({
     endDrag();
   };
 
+  const isDraggable = !isTouchDevice;
+
   return (
     <div
-      className="group flex h-full min-h-[180px] cursor-grab flex-col rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm transition-all hover:border-neutral-300 hover:shadow-md active:cursor-grabbing dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-700"
-      draggable
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
+      className={cn(
+        "group flex h-full min-h-[180px] flex-col rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm transition-all hover:border-neutral-300 hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-700",
+        isDraggable && "cursor-grab active:cursor-grabbing"
+      )}
+      draggable={isDraggable}
+      onDragStart={isDraggable ? handleDragStart : undefined}
+      onDragEnd={isDraggable ? handleDragEnd : undefined}
     >
       {/* Top row: Avatar and Actions */}
       <div className="flex items-start justify-between">
