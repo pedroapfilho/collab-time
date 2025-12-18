@@ -1,0 +1,20 @@
+// Re-export cn from the UI package
+export { cn } from "@repo/ui";
+
+// App-specific utilities
+const formatHour = (hour: number): string => {
+  return `${hour.toString().padStart(2, "0")}:00`;
+};
+
+const debounce = <T extends (...args: Parameters<T>) => void>(
+  fn: T,
+  delay: number
+): ((...args: Parameters<T>) => void) => {
+  let timeoutId: ReturnType<typeof setTimeout>;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => fn(...args), delay);
+  };
+};
+
+export { formatHour, debounce };
