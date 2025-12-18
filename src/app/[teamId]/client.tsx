@@ -13,7 +13,7 @@ import {
   Pencil,
   Users,
 } from "lucide-react";
-import type { Team, TeamGroup, TeamMember } from "@/types";
+import type { TeamGroup, TeamMember, TeamSession } from "@/types";
 import { AddGroupDialog } from "@/components/add-group-dialog";
 import { AddMemberDialog } from "@/components/add-member-dialog";
 import { CurrentTimeDisplay } from "@/components/current-time-display";
@@ -21,11 +21,15 @@ import { GroupHeader } from "@/components/group-header";
 import { MemberCard } from "@/components/member-card";
 import { ModeToggle } from "@/components/mode-toggle";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Spinner } from "@/components/ui/spinner";
 import { TeamInsights } from "@/components/team-insights";
 import { TimezoneVisualizer } from "@/components/timezone-visualizer";
+import { TeamAuthDialog } from "@/components/team-auth-dialog";
+import { useTeamQuery, useUpdateTeamCache } from "@/hooks/use-team-query";
 import { useVisitedTeams } from "@/hooks/use-visited-teams";
 import { useRealtime } from "@/lib/realtime-client";
 import { updateTeamName as updateTeamNameAction } from "@/lib/actions";
+import { clearTeamSession, readTeamSession, writeTeamSession } from "@/lib/team-session";
 import { cn } from "@/lib/utils";
 import { DragProvider } from "@/contexts/drag-context";
 import {
@@ -34,14 +38,13 @@ import {
 } from "@/lib/timezones";
 
 type TeamPageClientProps = {
-  team: Team;
+  teamId: string;
 };
 
 const COLLAPSED_GROUPS_KEY = "collab-time-collapsed-groups";
 
-const TeamPageClient = ({ team }: TeamPageClientProps) => {
-  const [members, setMembers] = useState<TeamMember[]>(team.members);
-  const [groups, setGroups] = useState<TeamGroup[]>(team.groups ?? []);
+const TeamPageClient = ({ teamId }: TeamPageClientProps) => {
+  const [session, setSession] = useState<TeamSession | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
   // Load collapsed groups from localStorage after hydration
@@ -55,9 +58,52 @@ const TeamPageClient = ({ team }: TeamPageClientProps) => {
   const [hasCopied, setHasCopied] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const { saveVisitedTeam } = useVisitedTeams();
-  const [teamName, setTeamName] = useState(team.name);
+  const [teamName, setTeamName] = useState("");
   const lastRemovalRef = useRef<{ id: string; ts: number }>({ id: "", ts: 0 });
-  const previousNameRef = useRef(team.name);
+  const previousNameRef = useRef("");
+
+  const sessionToken = session?.token ?? null;
+
+  // Load session from sessionStorage after hydration
+  useEffect(() => {
+    const stored = readTeamSession(teamId);
+    if (stored) {
+      setSession(stored);
+    }
+  }, [teamId]);
+
+  // Fetch team data with TanStack Query
+  const { data: teamData, error: teamError } = useTeamQuery({
+    teamId,
+    token: sessionToken,
+  });
+
+  const updateTeamCache = useUpdateTeamCache();
+
+  // Handle query error (e.g., session expired)
+  useEffect(() => {
+    if (teamError) {
+      clearTeamSession(teamId);
+      setSession(null);
+      setTeamName("");
+      previousNameRef.current = "";
+      toast.error(teamError.message);
+    }
+  }, [teamError, teamId]);
+
+  // Derived values from query - memoized for stable references
+  const team = teamData?.team ?? null;
+  const members = useMemo(() => team?.members ?? [], [team?.members]);
+  const groups = useMemo(() => team?.groups ?? [], [team?.groups]);
+
+  // Sync team data to local state when query data changes
+  useEffect(() => {
+    if (team) {
+      setTeamName(team.name);
+      previousNameRef.current = team.name;
+    }
+  }, [team]);
+  const isAdmin = teamData?.role === "admin";
 
   // Persist collapsed groups to localStorage
   useEffect(() => {
@@ -93,9 +139,9 @@ const TeamPageClient = ({ team }: TeamPageClientProps) => {
     });
   }, [members]);
 
-  // Subscribe to realtime events for this team
+  // Subscribe to realtime events for this team - updates TanStack Query cache
   useRealtime({
-    channels: [`team-${team.id}`],
+    channels: session ? [`team-${teamId}`] : [],
     events: [
       "team.memberAdded",
       "team.memberRemoved",
@@ -110,12 +156,19 @@ const TeamPageClient = ({ team }: TeamPageClientProps) => {
     onData({ event, data }) {
       if (event === "team.memberAdded") {
         const newMember = data as TeamMember;
-        setMembers((prev) => {
-          // Avoid duplicates (in case the current user added the member)
-          if (prev.some((m) => m.id === newMember.id)) {
+        updateTeamCache(teamId, (prev) => {
+          if (!prev) return prev;
+          // Avoid duplicates
+          if (prev.team.members.some((m) => m.id === newMember.id)) {
             return prev;
           }
-          return [...prev, newMember];
+          return {
+            ...prev,
+            team: {
+              ...prev.team,
+              members: [...prev.team.members, newMember],
+            },
+          };
         });
         toast.success(`${newMember.name} joined the team`, {
           id: `member-added-${newMember.id}`,
@@ -131,60 +184,122 @@ const TeamPageClient = ({ team }: TeamPageClientProps) => {
           return;
         }
 
-        setMembers((prev) => {
-          const member = prev.find((m) => m.id === memberId);
+        updateTeamCache(teamId, (prev) => {
+          if (!prev) return prev;
+          const member = prev.team.members.find((m) => m.id === memberId);
           if (member) {
             lastRemovalRef.current = { id: memberId, ts: Date.now() };
             toast.success(`${member.name} left the team`, {
               id: `member-removed-${memberId}`,
             });
           }
-          return prev.filter((m) => m.id !== memberId);
+          return {
+            ...prev,
+            team: {
+              ...prev.team,
+              members: prev.team.members.filter((m) => m.id !== memberId),
+            },
+          };
         });
       } else if (event === "team.memberUpdated") {
         const updatedMember = data as TeamMember;
-        setMembers((prev) =>
-          prev.map((m) => (m.id === updatedMember.id ? updatedMember : m))
-        );
+        updateTeamCache(teamId, (prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            team: {
+              ...prev.team,
+              members: prev.team.members.map((m) =>
+                m.id === updatedMember.id ? updatedMember : m
+              ),
+            },
+          };
+        });
       } else if (event === "team.membersReordered") {
         const { order } = data as { order: string[] };
-        setMembers((prev) => {
-          const map = new Map(prev.map((m) => [m.id, m]));
-          return order.map((id) => map.get(id)).filter(Boolean) as TeamMember[];
+        updateTeamCache(teamId, (prev) => {
+          if (!prev) return prev;
+          const map = new Map(prev.team.members.map((m) => [m.id, m]));
+          return {
+            ...prev,
+            team: {
+              ...prev.team,
+              members: order.map((id) => map.get(id)).filter(Boolean) as TeamMember[],
+            },
+          };
         });
       } else if (event === "team.nameUpdated") {
         const { name } = data as { name: string };
+        updateTeamCache(teamId, (prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            team: { ...prev.team, name },
+          };
+        });
         setTeamName(name);
+        previousNameRef.current = name;
       } else if (event === "team.groupCreated") {
         const newGroup = data as TeamGroup;
-        setGroups((prev) => {
-          if (prev.some((g) => g.id === newGroup.id)) {
+        updateTeamCache(teamId, (prev) => {
+          if (!prev) return prev;
+          if (prev.team.groups.some((g) => g.id === newGroup.id)) {
             return prev;
           }
-          return [...prev, newGroup];
+          return {
+            ...prev,
+            team: {
+              ...prev.team,
+              groups: [...prev.team.groups, newGroup],
+            },
+          };
         });
       } else if (event === "team.groupUpdated") {
         const updatedGroup = data as TeamGroup;
-        setGroups((prev) =>
-          prev.map((g) => (g.id === updatedGroup.id ? updatedGroup : g))
-        );
+        updateTeamCache(teamId, (prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            team: {
+              ...prev.team,
+              groups: prev.team.groups.map((g) =>
+                g.id === updatedGroup.id ? updatedGroup : g
+              ),
+            },
+          };
+        });
       } else if (event === "team.groupRemoved") {
         const { groupId } = data as { groupId: string };
-        setGroups((prev) => prev.filter((g) => g.id !== groupId));
-        // Unassign members from the removed group
-        setMembers((prev) =>
-          prev.map((m) => (m.groupId === groupId ? { ...m, groupId: undefined } : m))
-        );
+        updateTeamCache(teamId, (prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            team: {
+              ...prev.team,
+              groups: prev.team.groups.filter((g) => g.id !== groupId),
+              members: prev.team.members.map((m) =>
+                m.groupId === groupId ? { ...m, groupId: undefined } : m
+              ),
+            },
+          };
+        });
       } else if (event === "team.groupsReordered") {
         const { order } = data as { order: string[] };
-        setGroups((prev) => {
-          const map = new Map(prev.map((g) => [g.id, g]));
-          return order
-            .map((id, index) => {
-              const group = map.get(id);
-              return group ? { ...group, order: index } : null;
-            })
-            .filter(Boolean) as TeamGroup[];
+        updateTeamCache(teamId, (prev) => {
+          if (!prev) return prev;
+          const map = new Map(prev.team.groups.map((g) => [g.id, g]));
+          return {
+            ...prev,
+            team: {
+              ...prev.team,
+              groups: order
+                .map((id, index) => {
+                  const group = map.get(id);
+                  return group ? { ...group, order: index } : null;
+                })
+                .filter(Boolean) as TeamGroup[],
+            },
+          };
         });
       }
     },
@@ -192,35 +307,13 @@ const TeamPageClient = ({ team }: TeamPageClientProps) => {
 
   // Save team to visited teams on mount and when members/name change
   useEffect(() => {
-    saveVisitedTeam(team.id, members.length, teamName);
-  }, [team.id, members.length, teamName, saveVisitedTeam]);
-
-  // Re-fetch team data when tab regains focus to ensure sync
-  useEffect(() => {
-    const handleVisibilityChange = async () => {
-      if (document.visibilityState === "visible") {
-        try {
-          const response = await fetch(`/api/team/${team.id}`);
-          if (response.ok) {
-            const freshTeam = (await response.json()) as Team;
-            setMembers(freshTeam.members);
-            setGroups(freshTeam.groups ?? []);
-            setTeamName(freshTeam.name);
-            previousNameRef.current = freshTeam.name;
-          }
-        } catch {
-          // Silently fail - realtime should catch up
-        }
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [team.id]);
+    if (!team) return;
+    saveVisitedTeam(teamId, members.length, teamName);
+  }, [team, teamId, members.length, teamName, saveVisitedTeam]);
 
   const handleSaveName = () => {
+    if (!isAdmin || !session) return;
+
     const trimmedName = teamName.trim();
     setIsEditingName(false);
 
@@ -230,7 +323,7 @@ const TeamPageClient = ({ team }: TeamPageClientProps) => {
 
     previousNameRef.current = trimmedName;
     startTransition(async () => {
-      const result = await updateTeamNameAction(team.id, trimmedName);
+      const result = await updateTeamNameAction(teamId, session.token, trimmedName);
       if (!result.success) {
         toast.error(result.error);
       }
@@ -288,79 +381,170 @@ const TeamPageClient = ({ team }: TeamPageClientProps) => {
   const collapsedGroupIds = useMemo(() => [...collapsedGroups], [collapsedGroups]);
 
   // Callbacks for local state updates (realtime handles cross-user sync)
-  const handleMemberAdded = useCallback((newMember: TeamMember) => {
-    setMembers((prev) => {
-      if (prev.some((m) => m.id === newMember.id)) {
-        return prev;
-      }
-      return [...prev, newMember];
-    });
-  }, []);
+  const handleMemberAdded = useCallback(
+    (newMember: TeamMember) => {
+      updateTeamCache(teamId, (prev) => {
+        if (!prev) return prev;
+        if (prev.team.members.some((m) => m.id === newMember.id)) {
+          return prev;
+        }
+        return {
+          ...prev,
+          team: {
+            ...prev.team,
+            members: [...prev.team.members, newMember],
+          },
+        };
+      });
+    },
+    [teamId, updateTeamCache]
+  );
 
-  const handleMemberRemoved = useCallback((memberId: string) => {
-    setMembers((prev) => prev.filter((m) => m.id !== memberId));
-  }, []);
+  const handleMemberRemoved = useCallback(
+    (memberId: string) => {
+      updateTeamCache(teamId, (prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          team: {
+            ...prev.team,
+            members: prev.team.members.filter((m) => m.id !== memberId),
+          },
+        };
+      });
+    },
+    [teamId, updateTeamCache]
+  );
 
-  const handleMemberUpdated = useCallback((updatedMember: TeamMember) => {
-    setMembers((prev) =>
-      prev.map((m) => (m.id === updatedMember.id ? updatedMember : m))
-    );
-  }, []);
+  const handleMemberUpdated = useCallback(
+    (updatedMember: TeamMember) => {
+      updateTeamCache(teamId, (prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          team: {
+            ...prev.team,
+            members: prev.team.members.map((m) =>
+              m.id === updatedMember.id ? updatedMember : m
+            ),
+          },
+        };
+      });
+    },
+    [teamId, updateTeamCache]
+  );
 
-  const handleGroupAdded = useCallback((newGroup: TeamGroup) => {
-    setGroups((prev) => {
-      if (prev.some((g) => g.id === newGroup.id)) {
-        return prev;
-      }
-      return [...prev, newGroup];
-    });
-  }, []);
+  const handleGroupAdded = useCallback(
+    (newGroup: TeamGroup) => {
+      updateTeamCache(teamId, (prev) => {
+        if (!prev) return prev;
+        if (prev.team.groups.some((g) => g.id === newGroup.id)) {
+          return prev;
+        }
+        return {
+          ...prev,
+          team: {
+            ...prev.team,
+            groups: [...prev.team.groups, newGroup],
+          },
+        };
+      });
+    },
+    [teamId, updateTeamCache]
+  );
 
-  const handleGroupUpdated = useCallback((updatedGroup: TeamGroup) => {
-    setGroups((prev) =>
-      prev.map((g) => (g.id === updatedGroup.id ? updatedGroup : g))
-    );
-  }, []);
+  const handleGroupUpdated = useCallback(
+    (updatedGroup: TeamGroup) => {
+      updateTeamCache(teamId, (prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          team: {
+            ...prev.team,
+            groups: prev.team.groups.map((g) =>
+              g.id === updatedGroup.id ? updatedGroup : g
+            ),
+          },
+        };
+      });
+    },
+    [teamId, updateTeamCache]
+  );
 
-  const handleGroupRemoved = useCallback((groupId: string) => {
-    setGroups((prev) => prev.filter((g) => g.id !== groupId));
-    // Unassign members from the removed group
-    setMembers((prev) =>
-      prev.map((m) => (m.groupId === groupId ? { ...m, groupId: undefined } : m))
-    );
-  }, []);
+  const handleGroupRemoved = useCallback(
+    (groupId: string) => {
+      updateTeamCache(teamId, (prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          team: {
+            ...prev.team,
+            groups: prev.team.groups.filter((g) => g.id !== groupId),
+            // Unassign members from the removed group
+            members: prev.team.members.map((m) =>
+              m.groupId === groupId ? { ...m, groupId: undefined } : m
+            ),
+          },
+        };
+      });
+    },
+    [teamId, updateTeamCache]
+  );
 
   const handleMemberDroppedOnGroup = useCallback(
     async (memberId: string, groupId: string) => {
+      if (!isAdmin || !session) {
+        toast.error("Admin access required");
+        return;
+      }
+
       const member = members.find((m) => m.id === memberId);
       if (!member) return;
 
       // Skip if already in this group
       if (member.groupId === groupId) return;
 
+      const previousGroupId = member.groupId;
+
       // Optimistic update
-      setMembers((prev) =>
-        prev.map((m) => (m.id === memberId ? { ...m, groupId } : m))
-      );
+      updateTeamCache(teamId, (prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          team: {
+            ...prev.team,
+            members: prev.team.members.map((m) =>
+              m.id === memberId ? { ...m, groupId } : m
+            ),
+          },
+        };
+      });
 
       // Import dynamically to avoid issues
       const { updateMember } = await import("@/lib/actions");
-      const result = await updateMember(team.id, memberId, { groupId });
+      const result = await updateMember(teamId, session.token, memberId, { groupId });
 
       if (result.success) {
         const group = groups.find((g) => g.id === groupId);
         toast.success(`${member.name} added to ${group?.name ?? "group"}`);
       } else {
         // Revert on failure
-        setMembers((prev) =>
-          prev.map((m) =>
-            m.id === memberId ? { ...m, groupId: member.groupId } : m
-          )
-        );
+        updateTeamCache(teamId, (prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            team: {
+              ...prev.team,
+              members: prev.team.members.map((m) =>
+                m.id === memberId ? { ...m, groupId: previousGroupId } : m
+              ),
+            },
+          };
+        });
         toast.error(result.error);
       }
     },
-    [members, groups, team.id]
+    [isAdmin, members, groups, teamId, session, updateTeamCache]
   );
 
   const handleCopyLink = async () => {
@@ -373,6 +557,33 @@ const TeamPageClient = ({ team }: TeamPageClientProps) => {
       toast.error("Failed to copy link");
     }
   };
+
+  const handleAuthenticated = useCallback(
+    (data: { token: string; role: "admin" | "member" }) => {
+      const nextSession: TeamSession = { token: data.token, role: data.role };
+      setSession(nextSession);
+      writeTeamSession(teamId, nextSession);
+
+      toast.success(
+        data.role === "admin" ? "Admin access granted" : "Member access granted"
+      );
+    },
+    [teamId]
+  );
+
+  if (!session) {
+    return (
+      <TeamAuthDialog open teamId={teamId} onAuthenticated={handleAuthenticated} />
+    );
+  }
+
+  if (!team) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Spinner className="h-5 w-5" />
+      </div>
+    );
+  }
 
   return (
     <DragProvider>
@@ -394,32 +605,40 @@ const TeamPageClient = ({ team }: TeamPageClientProps) => {
               >
                 <Globe className="h-5 w-5 text-white dark:text-neutral-900" />
               </Link>
-              {isEditingName ? (
-                <input
-                  type="text"
-                  value={teamName}
-                  onChange={(e) => setTeamName(e.target.value)}
-                  onBlur={handleSaveName}
-                  onKeyDown={handleKeyDown}
-                  autoFocus
-                  placeholder="Team name…"
-                  className="h-9 w-full max-w-48 rounded-lg border border-neutral-200 bg-white px-3 text-base font-bold tracking-tight text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:focus:border-neutral-400 dark:focus:ring-neutral-400/20 sm:text-lg"
-                />
-              ) : (
-                <button
-                  onClick={() => setIsEditingName(true)}
-                  className="group flex min-w-0 items-center gap-2"
-                >
-                  <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">{teamName || "Team Workspace"}</h1>
-                  <Pencil
-                    className={cn(
-                      "h-3.5 w-3.5 shrink-0 text-neutral-400 transition-opacity",
-                      teamName
-                        ? "opacity-0 group-hover:opacity-100"
-                        : "opacity-100"
-                    )}
+              {isAdmin ? (
+                isEditingName ? (
+                  <input
+                    type="text"
+                    value={teamName}
+                    onChange={(e) => setTeamName(e.target.value)}
+                    onBlur={handleSaveName}
+                    onKeyDown={handleKeyDown}
+                    autoFocus
+                    placeholder="Team name…"
+                    className="h-9 w-full max-w-48 rounded-lg border border-neutral-200 bg-white px-3 text-base font-bold tracking-tight text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:focus:border-neutral-400 dark:focus:ring-neutral-400/20 sm:text-lg"
                   />
-                </button>
+                ) : (
+                  <button
+                    onClick={() => setIsEditingName(true)}
+                    className="group flex min-w-0 items-center gap-2"
+                  >
+                    <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">
+                      {teamName || "Team Workspace"}
+                    </h1>
+                    <Pencil
+                      className={cn(
+                        "h-3.5 w-3.5 shrink-0 text-neutral-400 transition-opacity",
+                        teamName
+                          ? "opacity-0 group-hover:opacity-100"
+                          : "opacity-100"
+                      )}
+                    />
+                  </button>
+                )
+              ) : (
+                <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">
+                  {teamName || "Team Workspace"}
+                </h1>
               )}
             </div>
 
@@ -528,8 +747,10 @@ const TeamPageClient = ({ team }: TeamPageClientProps) => {
                     <MemberCard
                       key={member.id}
                       member={member}
-                      teamId={team.id}
+                      teamId={teamId}
+                      token={session.token}
                       groups={groups}
+                      canEdit={isAdmin}
                       onMemberRemoved={handleMemberRemoved}
                       onMemberUpdated={handleMemberUpdated}
                     />
@@ -538,12 +759,19 @@ const TeamPageClient = ({ team }: TeamPageClientProps) => {
               </ScrollArea>
             )}
 
-            <AddMemberDialog
-              teamId={team.id}
-              groups={groups}
-              onMemberAdded={handleMemberAdded}
-              isFirstMember={members.length === 0}
-            />
+            {isAdmin ? (
+              <AddMemberDialog
+                teamId={teamId}
+                token={session.token}
+                groups={groups}
+                onMemberAdded={handleMemberAdded}
+                isFirstMember={members.length === 0}
+              />
+            ) : (
+              <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                View-only access. Ask an admin for the admin password to make changes.
+              </p>
+            )}
           </section>
 
           {/* Groups */}
@@ -579,18 +807,26 @@ const TeamPageClient = ({ team }: TeamPageClientProps) => {
                       <GroupHeader
                         key={group.id}
                         group={group}
-                        teamId={team.id}
+                        teamId={teamId}
+                        token={session.token}
                         memberCount={members.filter((m) => m.groupId === group.id).length}
+                        canEdit={isAdmin}
                         onGroupUpdated={handleGroupUpdated}
                         onGroupRemoved={handleGroupRemoved}
-                        onMemberDropped={handleMemberDroppedOnGroup}
+                        onMemberDropped={isAdmin ? handleMemberDroppedOnGroup : undefined}
                       />
                     ))}
                 </div>
               </ScrollArea>
             )}
 
-            <AddGroupDialog teamId={team.id} onGroupAdded={handleGroupAdded} />
+            {isAdmin && (
+              <AddGroupDialog
+                teamId={teamId}
+                token={session.token}
+                onGroupAdded={handleGroupAdded}
+              />
+            )}
           </section>
         </motion.div>
         </motion.main>
