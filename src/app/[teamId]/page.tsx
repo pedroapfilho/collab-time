@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { validateTeam } from "@/lib/actions";
+import { readTeamSession } from "@/lib/team-session";
 import { TeamPageClient } from "./client";
 
 type TeamPageProps = {
@@ -13,7 +14,9 @@ const TeamPage = async ({ params }: TeamPageProps) => {
     notFound();
   }
 
-  return <TeamPageClient teamId={teamId} />;
+  const initialSession = await readTeamSession(teamId);
+
+  return <TeamPageClient teamId={teamId} initialSession={initialSession} />;
 };
 
 export default TeamPage;

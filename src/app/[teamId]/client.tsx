@@ -29,7 +29,7 @@ import { useTeamQuery, useUpdateTeamCache } from "@/hooks/use-team-query";
 import { useVisitedTeams } from "@/hooks/use-visited-teams";
 import { useRealtime } from "@/lib/realtime-client";
 import { updateTeamName as updateTeamNameAction } from "@/lib/actions";
-import { clearTeamSession, readTeamSession, writeTeamSession } from "@/lib/team-session";
+import { clearTeamSession, writeTeamSession } from "@/lib/team-session";
 import { cn } from "@/lib/utils";
 import { DragProvider } from "@/contexts/drag-context";
 import {
@@ -39,12 +39,13 @@ import {
 
 type TeamPageClientProps = {
   teamId: string;
+  initialSession: TeamSession | null;
 };
 
 const COLLAPSED_GROUPS_KEY = "collab-time-collapsed-groups";
 
-const TeamPageClient = ({ teamId }: TeamPageClientProps) => {
-  const [session, setSession] = useState<TeamSession | null>(null);
+const TeamPageClient = ({ teamId, initialSession }: TeamPageClientProps) => {
+  const [session, setSession] = useState<TeamSession | null>(initialSession);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
   // Load collapsed groups from localStorage after hydration
@@ -64,14 +65,6 @@ const TeamPageClient = ({ teamId }: TeamPageClientProps) => {
 
   const sessionToken = session?.token ?? null;
 
-  // Load session from sessionStorage after hydration
-  useEffect(() => {
-    const stored = readTeamSession(teamId);
-    if (stored) {
-      setSession(stored);
-    }
-  }, [teamId]);
-
   // Fetch team data with TanStack Query
   const { data: teamData, error: teamError } = useTeamQuery({
     teamId,
@@ -83,7 +76,7 @@ const TeamPageClient = ({ teamId }: TeamPageClientProps) => {
   // Handle query error (e.g., session expired)
   useEffect(() => {
     if (teamError) {
-      clearTeamSession(teamId);
+      clearTeamSession(teamId).catch(() => {});
       setSession(null);
       setTeamName("");
       previousNameRef.current = "";
@@ -559,10 +552,10 @@ const TeamPageClient = ({ teamId }: TeamPageClientProps) => {
   };
 
   const handleAuthenticated = useCallback(
-    (data: { token: string; role: "admin" | "member" }) => {
+    async (data: { token: string; role: "admin" | "member" }) => {
       const nextSession: TeamSession = { token: data.token, role: data.role };
       setSession(nextSession);
-      writeTeamSession(teamId, nextSession);
+      await writeTeamSession(teamId, nextSession);
 
       toast.success(
         data.role === "admin" ? "Admin access granted" : "Member access granted"
