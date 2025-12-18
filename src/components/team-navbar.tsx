@@ -253,11 +253,6 @@ const TeamNavbar = ({
                 </div>
               </div>
 
-              {/* Current time */}
-              <div className="flex items-center justify-center py-1">
-                <CurrentTimeDisplay />
-              </div>
-
               {/* Actions */}
               <div className="flex flex-col gap-1">
                 <Button
