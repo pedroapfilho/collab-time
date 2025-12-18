@@ -740,7 +740,19 @@ const TeamPageClient = ({ teamId }: TeamPageClientProps) => {
               </span>
             </div>
 
-            {members.length > 0 && (
+            {members.length === 0 ? (
+              <div className="flex flex-1 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-neutral-200 bg-neutral-50/50 px-6 py-12 text-center dark:border-neutral-800 dark:bg-neutral-900/50">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800">
+                  <Users className="h-6 w-6 text-neutral-500" />
+                </div>
+                <h3 className="mt-4 font-semibold text-neutral-900 dark:text-neutral-100">
+                  Build your team
+                </h3>
+                <p className="mx-auto mt-1 max-w-sm text-sm text-neutral-500 dark:text-neutral-400">
+                  Add team members to see their working hours and find the best times to collaborate across timezones.
+                </p>
+              </div>
+            ) : (
               <ScrollArea className="max-h-[600px]">
                 <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4 pr-4">
                   {orderedMembers.map((member) => (
