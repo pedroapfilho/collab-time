@@ -14,9 +14,9 @@ const TeamPage = async ({ params }: TeamPageProps) => {
     notFound();
   }
 
-  const initialSession = await readTeamSession(teamId);
+  const initialToken = await readTeamSession(teamId);
 
-  return <TeamPageClient teamId={teamId} initialSession={initialSession} />;
+  return <TeamPageClient teamId={teamId} initialToken={initialToken} />;
 };
 
 export default TeamPage;

@@ -69,7 +69,7 @@ const Home = () => {
         return;
       }
 
-      writeTeamSession(createResult.data, { token: authResult.data.token, role: "admin" });
+      await writeTeamSession(createResult.data, authResult.data.token);
       router.push(`/${createResult.data}`);
     } catch {
       toast.error("Failed to create team. Please try again.");

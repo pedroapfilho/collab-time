@@ -1,26 +1,16 @@
 "use client";
 
-import { AnimatePresence, motion } from "motion/react";
-import Link from "next/link";
+import { motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
-import {
-  Check,
-  Clock,
-  Copy,
-  FolderKanban,
-  Globe,
-  Pencil,
-  Users,
-} from "lucide-react";
-import type { TeamGroup, TeamMember, TeamSession } from "@/types";
+import { Clock, FolderKanban, Users } from "lucide-react";
+import type { TeamGroup, TeamMember } from "@/types";
 import { AddGroupDialog } from "@/components/add-group-dialog";
 import { AddMemberDialog } from "@/components/add-member-dialog";
-import { CurrentTimeDisplay } from "@/components/current-time-display";
 import { GroupHeader } from "@/components/group-header";
 import { MemberCard } from "@/components/member-card";
-import { ModeToggle } from "@/components/mode-toggle";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { TeamNavbar } from "@/components/team-navbar";
 import { Spinner } from "@/components/ui/spinner";
 import { TeamInsights } from "@/components/team-insights";
 import { TimezoneVisualizer } from "@/components/timezone-visualizer";
@@ -30,7 +20,6 @@ import { useVisitedTeams } from "@/hooks/use-visited-teams";
 import { useRealtime } from "@/lib/realtime-client";
 import { updateTeamName as updateTeamNameAction } from "@/lib/actions";
 import { clearTeamSession, writeTeamSession } from "@/lib/team-session";
-import { cn } from "@/lib/utils";
 import { DragProvider } from "@/contexts/drag-context";
 import {
   isCurrentlyWorking,
@@ -39,13 +28,13 @@ import {
 
 type TeamPageClientProps = {
   teamId: string;
-  initialSession: TeamSession | null;
+  initialToken: string | null;
 };
 
 const COLLAPSED_GROUPS_KEY = "collab-time-collapsed-groups";
 
-const TeamPageClient = ({ teamId, initialSession }: TeamPageClientProps) => {
-  const [session, setSession] = useState<TeamSession | null>(initialSession);
+const TeamPageClient = ({ teamId, initialToken }: TeamPageClientProps) => {
+  const [token, setToken] = useState<string | null>(initialToken);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
   // Load collapsed groups from localStorage after hydration
@@ -56,19 +45,16 @@ const TeamPageClient = ({ teamId, initialSession }: TeamPageClientProps) => {
     }
   }, []);
   const [, startTransition] = useTransition();
-  const [hasCopied, setHasCopied] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const { saveVisitedTeam } = useVisitedTeams();
   const [teamName, setTeamName] = useState("");
   const lastRemovalRef = useRef<{ id: string; ts: number }>({ id: "", ts: 0 });
   const previousNameRef = useRef("");
 
-  const sessionToken = session?.token ?? null;
-
   // Fetch team data with TanStack Query
   const { data: teamData, error: teamError } = useTeamQuery({
     teamId,
-    token: sessionToken,
+    token,
   });
 
   const updateTeamCache = useUpdateTeamCache();
@@ -77,7 +63,7 @@ const TeamPageClient = ({ teamId, initialSession }: TeamPageClientProps) => {
   useEffect(() => {
     if (teamError) {
       clearTeamSession(teamId).catch(() => {});
-      setSession(null);
+      setToken(null);
       setTeamName("");
       previousNameRef.current = "";
       toast.error(teamError.message);
@@ -134,7 +120,7 @@ const TeamPageClient = ({ teamId, initialSession }: TeamPageClientProps) => {
 
   // Subscribe to realtime events for this team - updates TanStack Query cache
   useRealtime({
-    channels: session ? [`team-${teamId}`] : [],
+    channels: token ? [`team-${teamId}`] : [],
     events: [
       "team.memberAdded",
       "team.memberRemoved",
@@ -305,7 +291,7 @@ const TeamPageClient = ({ teamId, initialSession }: TeamPageClientProps) => {
   }, [team, teamId, members.length, teamName, saveVisitedTeam]);
 
   const handleSaveName = () => {
-    if (!isAdmin || !session) return;
+    if (!isAdmin || !token) return;
 
     const trimmedName = teamName.trim();
     setIsEditingName(false);
@@ -316,21 +302,23 @@ const TeamPageClient = ({ teamId, initialSession }: TeamPageClientProps) => {
 
     previousNameRef.current = trimmedName;
     startTransition(async () => {
-      const result = await updateTeamNameAction(teamId, session.token, trimmedName);
+      const result = await updateTeamNameAction(teamId, token, trimmedName);
       if (!result.success) {
         toast.error(result.error);
       }
     });
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleSaveName();
-    } else if (e.key === "Escape") {
-      setTeamName(previousNameRef.current);
-      setIsEditingName(false);
-    }
-  };
+  const handleCancelEditName = useCallback(() => {
+    setTeamName(previousNameRef.current);
+    setIsEditingName(false);
+  }, []);
+
+  const handleLogout = useCallback(() => {
+    setToken(null);
+    setTeamName("");
+    previousNameRef.current = "";
+  }, []);
 
   // Sort members: available first, then by time until available
   const orderedMembers = useMemo(() => {
@@ -486,7 +474,7 @@ const TeamPageClient = ({ teamId, initialSession }: TeamPageClientProps) => {
 
   const handleMemberDroppedOnGroup = useCallback(
     async (memberId: string, groupId: string) => {
-      if (!isAdmin || !session) {
+      if (!isAdmin || !token) {
         toast.error("Admin access required");
         return;
       }
@@ -515,7 +503,7 @@ const TeamPageClient = ({ teamId, initialSession }: TeamPageClientProps) => {
 
       // Import dynamically to avoid issues
       const { updateMember } = await import("@/lib/actions");
-      const result = await updateMember(teamId, session.token, memberId, { groupId });
+      const result = await updateMember(teamId, token, memberId, { groupId });
 
       if (result.success) {
         const group = groups.find((g) => g.id === groupId);
@@ -537,25 +525,13 @@ const TeamPageClient = ({ teamId, initialSession }: TeamPageClientProps) => {
         toast.error(result.error);
       }
     },
-    [isAdmin, members, groups, teamId, session, updateTeamCache]
+    [isAdmin, members, groups, teamId, token, updateTeamCache]
   );
-
-  const handleCopyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      setHasCopied(true);
-      toast.success("Link copied to clipboard");
-      setTimeout(() => setHasCopied(false), 2000);
-    } catch {
-      toast.error("Failed to copy link");
-    }
-  };
 
   const handleAuthenticated = useCallback(
     async (data: { token: string; role: "admin" | "member" }) => {
-      const nextSession: TeamSession = { token: data.token, role: data.role };
-      setSession(nextSession);
-      await writeTeamSession(teamId, nextSession);
+      setToken(data.token);
+      await writeTeamSession(teamId, data.token);
 
       toast.success(
         data.role === "admin" ? "Admin access granted" : "Member access granted"
@@ -564,7 +540,7 @@ const TeamPageClient = ({ teamId, initialSession }: TeamPageClientProps) => {
     [teamId]
   );
 
-  if (!session) {
+  if (!token) {
     return (
       <TeamAuthDialog open teamId={teamId} onAuthenticated={handleAuthenticated} />
     );
@@ -588,92 +564,18 @@ const TeamPageClient = ({ teamId, initialSession }: TeamPageClientProps) => {
         className="mx-auto flex w-full max-w-[1800px] flex-col gap-6"
       >
         {/* Header */}
-        <header className="flex flex-col gap-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-3">
-              <Link
-                href="/"
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-neutral-900 transition-opacity hover:opacity-80 dark:bg-neutral-100"
-                aria-label="Go to homepage"
-              >
-                <Globe className="h-5 w-5 text-white dark:text-neutral-900" />
-              </Link>
-              {isAdmin ? (
-                isEditingName ? (
-                  <input
-                    type="text"
-                    value={teamName}
-                    onChange={(e) => setTeamName(e.target.value)}
-                    onBlur={handleSaveName}
-                    onKeyDown={handleKeyDown}
-                    autoFocus
-                    placeholder="Team name…"
-                    className="h-9 w-full max-w-48 rounded-lg border border-neutral-200 bg-white px-3 text-base font-bold tracking-tight text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:focus:border-neutral-400 dark:focus:ring-neutral-400/20 sm:text-lg"
-                  />
-                ) : (
-                  <button
-                    onClick={() => setIsEditingName(true)}
-                    className="group flex min-w-0 items-center gap-2"
-                  >
-                    <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">
-                      {teamName || "Team Workspace"}
-                    </h1>
-                    <Pencil
-                      className={cn(
-                        "h-3.5 w-3.5 shrink-0 text-neutral-400 transition-opacity",
-                        teamName
-                          ? "opacity-0 group-hover:opacity-100"
-                          : "opacity-100"
-                      )}
-                    />
-                  </button>
-                )
-              ) : (
-                <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">
-                  {teamName || "Team Workspace"}
-                </h1>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2">
-              <CurrentTimeDisplay />
-              <button
-                onClick={handleCopyLink}
-                className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 text-sm font-medium text-neutral-700 shadow-sm transition-all hover:border-neutral-300 hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:border-neutral-700 dark:hover:bg-neutral-800 dark:focus-visible:ring-neutral-100 dark:focus-visible:ring-offset-neutral-950 sm:px-4"
-              >
-                <AnimatePresence mode="wait">
-                  {hasCopied ? (
-                    <motion.div
-                      key="check"
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0.8, opacity: 0 }}
-                      transition={{ duration: 0.15 }}
-                      className="text-green-700 dark:text-green-400"
-                    >
-                      <Check className="h-4 w-4" />
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="copy"
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0.8, opacity: 0 }}
-                      transition={{ duration: 0.15 }}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-                <span className="hidden sm:inline">{hasCopied ? "Copied!" : "Copy Link"}</span>
-              </button>
-              <ModeToggle />
-            </div>
-          </div>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">
-            Share this page with your team to collaborate across timezones
-          </p>
-        </header>
+        <TeamNavbar
+          teamId={teamId}
+          teamName={teamName}
+          isAdmin={isAdmin}
+          isEditingName={isEditingName}
+          token={token}
+          onEditName={() => setIsEditingName(true)}
+          onNameChange={setTeamName}
+          onSaveName={handleSaveName}
+          onCancelEdit={handleCancelEditName}
+          onLogout={handleLogout}
+        />
 
         {/* Team Insights */}
         {members.length > 0 && (
@@ -753,7 +655,7 @@ const TeamPageClient = ({ teamId, initialSession }: TeamPageClientProps) => {
                       key={member.id}
                       member={member}
                       teamId={teamId}
-                      token={session.token}
+                      token={token}
                       groups={groups}
                       canEdit={isAdmin}
                       onMemberRemoved={handleMemberRemoved}
@@ -767,7 +669,7 @@ const TeamPageClient = ({ teamId, initialSession }: TeamPageClientProps) => {
             {isAdmin ? (
               <AddMemberDialog
                 teamId={teamId}
-                token={session.token}
+                token={token}
                 groups={groups}
                 onMemberAdded={handleMemberAdded}
                 isFirstMember={members.length === 0}
@@ -813,7 +715,7 @@ const TeamPageClient = ({ teamId, initialSession }: TeamPageClientProps) => {
                         key={group.id}
                         group={group}
                         teamId={teamId}
-                        token={session.token}
+                        token={token}
                         memberCount={members.filter((m) => m.groupId === group.id).length}
                         canEdit={isAdmin}
                         onGroupUpdated={handleGroupUpdated}
@@ -828,7 +730,7 @@ const TeamPageClient = ({ teamId, initialSession }: TeamPageClientProps) => {
             {isAdmin && (
               <AddGroupDialog
                 teamId={teamId}
-                token={session.token}
+                token={token}
                 onGroupAdded={handleGroupAdded}
               />
             )}

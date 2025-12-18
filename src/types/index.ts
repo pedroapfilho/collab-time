@@ -28,11 +28,6 @@ type TeamRecord = Team & {
   memberPasswordHash?: string;
 };
 
-type TeamSession = {
-  token: string;
-  role: "admin" | "member";
-};
-
 type ServerSession = {
   teamId: string;
   role: "admin" | "member";
@@ -41,4 +36,4 @@ type ServerSession = {
 
 type TeamRole = "admin" | "member";
 
-export type { ServerSession, Team, TeamGroup, TeamMember, TeamRecord, TeamRole, TeamSession };
+export type { ServerSession, Team, TeamGroup, TeamMember, TeamRecord, TeamRole };

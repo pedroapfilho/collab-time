@@ -157,7 +157,7 @@ const authenticateTeam = async (
     }
 
     if (!team.adminPasswordHash || !team.memberPasswordHash) {
-      return { success: false, error: "Team requires password setup" };
+      return { success: false, error: "This team is not accessible" };
     }
 
     // Check admin password first
@@ -249,9 +249,9 @@ const updateTeamPasswords = async (
 };
 
 const sanitizeTeam = (team: TeamRecord): Team => {
+  // Destructure to exclude password hashes from public team data
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { adminPasswordHash, memberPasswordHash, ...publicTeam } = team;
-  void adminPasswordHash;
-  void memberPasswordHash;
   return publicTeam;
 };
 
