@@ -819,7 +819,9 @@ const TimezoneVisualizer = ({
     const dayOffsetLabel = formatDayOffset(dayOffset);
 
     const content = (
-      <div className="flex h-8 items-center justify-center sm:justify-start sm:gap-2">
+      <div
+        className={`flex h-8 items-center justify-center sm:justify-start sm:gap-2 ${dayOffsetLabel ? "cursor-help" : ""}`}
+      >
         <div className="relative">
           <div
             className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-[10px] font-semibold text-white dark:bg-neutral-100 dark:text-neutral-900 sm:h-7 sm:w-7 sm:text-xs"
@@ -1115,7 +1117,10 @@ const TimezoneVisualizer = ({
                 )}
 
                 {visibleRows.length > 0 && (
-                  <div key={`section-${section.group?.id ?? "ungrouped"}`}>
+                  <div
+                    key={`section-${section.group?.id ?? "ungrouped"}`}
+                    className="mb-4"
+                  >
                     <div className="flex items-stretch gap-2 sm:gap-3">
                       <div className="flex w-8 shrink-0 flex-col gap-3 sm:w-24">
                         {visibleRows.map(({ member, dayOffset }) =>

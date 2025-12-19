@@ -124,7 +124,7 @@ const TeamNavbar = ({
                     "h-3.5 w-3.5 shrink-0 text-neutral-400 transition-opacity",
                     teamName
                       ? "opacity-0 group-hover:opacity-100"
-                      : "opacity-100"
+                      : "opacity-100",
                   )}
                 />
               </button>
@@ -167,7 +167,9 @@ const TeamNavbar = ({
                 </motion.div>
               )}
             </AnimatePresence>
-            <span className="hidden lg:inline">{hasCopied ? "Copied!" : "Copy Link"}</span>
+            <span className="hidden lg:inline">
+              {hasCopied ? "Copied!" : "Copy Link"}
+            </span>
           </button>
           <ModeToggle />
           <DropdownMenu>
@@ -272,7 +274,9 @@ const TeamNavbar = ({
                 </Button>
 
                 <div className="flex items-center justify-between rounded-lg px-4 py-2">
-                  <span className="text-sm text-neutral-700 dark:text-neutral-300">Theme</span>
+                  <span className="text-sm text-neutral-700 dark:text-neutral-300">
+                    Theme
+                  </span>
                   <ModeToggle />
                 </div>
 

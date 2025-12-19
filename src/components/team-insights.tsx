@@ -173,7 +173,7 @@ const TeamInsights = ({ members, groups = [] }: TeamInsightsProps) => {
                   return (
                     <Badge
                       key={member.id}
-                      className="bg-white shadow-sm text-neutral-700 dark:bg-neutral-700 dark:text-neutral-200"
+                      className="cursor-help bg-white shadow-sm text-neutral-700 dark:bg-neutral-700 dark:text-neutral-200"
                       title={
                         groupName
                           ? `${member.name} (${groupName})`
@@ -216,7 +216,7 @@ const TeamInsights = ({ members, groups = [] }: TeamInsightsProps) => {
                   return (
                     <Badge
                       key={member.id}
-                      className="bg-white shadow-sm dark:bg-neutral-700"
+                      className="cursor-help bg-white shadow-sm dark:bg-neutral-700"
                       title={
                         groupName
                           ? `${member.name} (${groupName})`
@@ -263,7 +263,7 @@ const TeamInsights = ({ members, groups = [] }: TeamInsightsProps) => {
                   return (
                     <Badge
                       key={member.id}
-                      className="bg-white shadow-sm dark:bg-neutral-700"
+                      className="cursor-help bg-white shadow-sm dark:bg-neutral-700"
                       title={
                         groupName
                           ? `${member.name} (${groupName})`
