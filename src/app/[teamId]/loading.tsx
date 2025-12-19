@@ -1,7 +1,7 @@
 const Loading = () => {
   return (
     <div className="min-h-screen w-full px-4 py-6 sm:px-6 lg:px-8 xl:px-12">
-      <main className="mx-auto flex w-full max-w-[1800px] flex-col gap-6">
+      <main className="mx-auto flex w-full max-w-450 flex-col gap-6">
         {/* Header Skeleton */}
         <header className="flex flex-col gap-4">
           <div className="flex items-start justify-between gap-3">
@@ -80,7 +80,7 @@ const Loading = () => {
               {[0, 1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="flex h-[180px] flex-col rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+                  className="flex h-45 flex-col rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
                 >
                   <div className="h-12 w-12 animate-pulse rounded-full bg-neutral-200 dark:bg-neutral-700" />
                   <div className="mt-3 flex flex-1 flex-col gap-1.5">
@@ -110,7 +110,7 @@ const Loading = () => {
               {[0, 1].map((i) => (
                 <div
                   key={i}
-                  className="flex h-[180px] flex-col rounded-2xl bg-neutral-100 p-4 dark:bg-neutral-800"
+                  className="flex h-45 flex-col rounded-2xl bg-neutral-100 p-4 dark:bg-neutral-800"
                 >
                   <div className="h-12 w-12 animate-pulse rounded-full bg-neutral-200 dark:bg-neutral-700" />
                   <div className="mt-3 flex flex-1 flex-col gap-2">

@@ -3,8 +3,13 @@
 import { useMemo, useSyncExternalStore } from "react";
 import { Circle, Clock, Sunrise, Users } from "lucide-react";
 import type { TeamGroup, TeamMember } from "@/types";
-import { getUserTimezone, isCurrentlyWorking, convertHourToTimezone } from "@/lib/timezones";
+import {
+  getUserTimezone,
+  isCurrentlyWorking,
+  convertHourToTimezone,
+} from "@/lib/timezones";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "./ui/badge";
 
 const SOON_THRESHOLD_HOURS = 2;
 const SCROLL_AREA_MAX_HEIGHT = 120;
@@ -40,7 +45,7 @@ const TeamInsights = ({ members, groups = [] }: TeamInsightsProps) => {
   const tick = useSyncExternalStore(
     tickSubscribe,
     getTickSnapshot,
-    getTickServerSnapshot
+    getTickServerSnapshot,
   );
 
   const memberStatuses = useMemo((): MemberStatus[] => {
@@ -54,25 +59,27 @@ const TeamInsights = ({ members, groups = [] }: TeamInsightsProps) => {
       hour: "numeric",
       hour12: false,
     });
-    const hourPart = formatter.formatToParts(now).find((p) => p.type === "hour");
+    const hourPart = formatter
+      .formatToParts(now)
+      .find((p) => p.type === "hour");
     const currentHourInViewer = hourPart ? parseInt(hourPart.value, 10) : 0;
 
     return members.map((member) => {
       const working = isCurrentlyWorking(
         member.timezone,
         member.workingHoursStart,
-        member.workingHoursEnd
+        member.workingHoursEnd,
       );
 
       const startInViewer = convertHourToTimezone(
         member.workingHoursStart,
         member.timezone,
-        viewerTimezone
+        viewerTimezone,
       );
       const endInViewer = convertHourToTimezone(
         member.workingHoursEnd,
         member.timezone,
-        viewerTimezone
+        viewerTimezone,
       );
 
       let hoursUntilStart: number | null = null;
@@ -99,23 +106,33 @@ const TeamInsights = ({ members, groups = [] }: TeamInsightsProps) => {
 
   const onlineMembers = useMemo(
     () => memberStatuses.filter((s) => s.isWorking),
-    [memberStatuses]
+    [memberStatuses],
   );
 
   const comingSoonMembers = useMemo(
     () =>
       memberStatuses
-        .filter((s) => !s.isWorking && s.hoursUntilStart !== null && s.hoursUntilStart <= SOON_THRESHOLD_HOURS)
+        .filter(
+          (s) =>
+            !s.isWorking &&
+            s.hoursUntilStart !== null &&
+            s.hoursUntilStart <= SOON_THRESHOLD_HOURS,
+        )
         .sort((a, b) => (a.hoursUntilStart ?? 0) - (b.hoursUntilStart ?? 0)),
-    [memberStatuses]
+    [memberStatuses],
   );
 
   const leavingSoonMembers = useMemo(
     () =>
       memberStatuses
-        .filter((s) => s.isWorking && s.hoursUntilEnd !== null && s.hoursUntilEnd <= SOON_THRESHOLD_HOURS)
+        .filter(
+          (s) =>
+            s.isWorking &&
+            s.hoursUntilEnd !== null &&
+            s.hoursUntilEnd <= SOON_THRESHOLD_HOURS,
+        )
         .sort((a, b) => (a.hoursUntilEnd ?? 0) - (b.hoursUntilEnd ?? 0)),
-    [memberStatuses]
+    [memberStatuses],
   );
 
   const getGroupName = (groupId?: string) => {
@@ -150,18 +167,22 @@ const TeamInsights = ({ members, groups = [] }: TeamInsightsProps) => {
           </div>
           {onlineMembers.length > 0 ? (
             <ScrollArea style={{ maxHeight: SCROLL_AREA_MAX_HEIGHT }}>
-              <div className="flex flex-wrap gap-1.5 pr-2">
+              <div className="flex flex-wrap gap-1.5 px-1 py-0.5">
                 {onlineMembers.map(({ member }) => {
                   const groupName = getGroupName(member.groupId);
                   return (
-                    <div
+                    <Badge
                       key={member.id}
-                      className="flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-xs font-medium text-neutral-700 shadow-sm dark:bg-neutral-700 dark:text-neutral-200"
-                      title={groupName ? `${member.name} (${groupName})` : member.name}
+                      className="bg-white shadow-sm text-neutral-700 dark:bg-neutral-700 dark:text-neutral-200"
+                      title={
+                        groupName
+                          ? `${member.name} (${groupName})`
+                          : member.name
+                      }
                     >
                       <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
                       {member.name}
-                    </div>
+                    </Badge>
                   );
                 })}
               </div>
@@ -188,20 +209,29 @@ const TeamInsights = ({ members, groups = [] }: TeamInsightsProps) => {
           </div>
           {comingSoonMembers.length > 0 ? (
             <ScrollArea style={{ maxHeight: SCROLL_AREA_MAX_HEIGHT }}>
-              <div className="flex flex-col gap-1.5 pr-2">
-                {comingSoonMembers.map(({ member, hoursUntilStart }) => (
-                  <div
-                    key={member.id}
-                    className="flex items-center justify-between rounded-lg bg-white px-2.5 py-1.5 shadow-sm dark:bg-neutral-700"
-                  >
-                    <span className="text-xs font-medium text-neutral-700 dark:text-neutral-200">
-                      {member.name}
-                    </span>
-                    <span className="text-xs tabular-nums text-amber-600 dark:text-amber-400">
-                      in {hoursUntilStart}h
-                    </span>
-                  </div>
-                ))}
+              <div className="flex flex-wrap gap-1.5 px-1 py-0.5">
+                {comingSoonMembers.map(({ member, hoursUntilStart }) => {
+                  const groupName = getGroupName(member.groupId);
+
+                  return (
+                    <Badge
+                      key={member.id}
+                      className="bg-white shadow-sm dark:bg-neutral-700"
+                      title={
+                        groupName
+                          ? `${member.name} (${groupName})`
+                          : member.name
+                      }
+                    >
+                      <span className="text-xs font-medium text-neutral-700 dark:text-neutral-200">
+                        {member.name}
+                      </span>
+                      <span className="text-xs tabular-nums text-amber-600 dark:text-amber-400">
+                        in {hoursUntilStart}h
+                      </span>
+                    </Badge>
+                  );
+                })}
               </div>
             </ScrollArea>
           ) : (
@@ -226,20 +256,29 @@ const TeamInsights = ({ members, groups = [] }: TeamInsightsProps) => {
           </div>
           {leavingSoonMembers.length > 0 ? (
             <ScrollArea style={{ maxHeight: SCROLL_AREA_MAX_HEIGHT }}>
-              <div className="flex flex-col gap-1.5 pr-2">
-                {leavingSoonMembers.map(({ member, hoursUntilEnd }) => (
-                  <div
-                    key={member.id}
-                    className="flex items-center justify-between rounded-lg bg-white px-2.5 py-1.5 shadow-sm dark:bg-neutral-700"
-                  >
-                    <span className="text-xs font-medium text-neutral-700 dark:text-neutral-200">
-                      {member.name}
-                    </span>
-                    <span className="text-xs tabular-nums text-blue-600 dark:text-blue-400">
-                      {hoursUntilEnd}h left
-                    </span>
-                  </div>
-                ))}
+              <div className="flex flex-wrap gap-1.5 px-1 py-0.5">
+                {leavingSoonMembers.map(({ member, hoursUntilEnd }) => {
+                  const groupName = getGroupName(member.groupId);
+
+                  return (
+                    <Badge
+                      key={member.id}
+                      className="bg-white shadow-sm dark:bg-neutral-700"
+                      title={
+                        groupName
+                          ? `${member.name} (${groupName})`
+                          : member.name
+                      }
+                    >
+                      <span className="text-xs font-medium text-neutral-700 dark:text-neutral-200">
+                        {member.name}
+                      </span>
+                      <span className="text-xs tabular-nums text-blue-600 dark:text-blue-400">
+                        {hoursUntilEnd}h left
+                      </span>
+                    </Badge>
+                  );
+                })}
               </div>
             </ScrollArea>
           ) : (

@@ -22,7 +22,7 @@ type GroupHeaderProps = {
   onMemberDropped?: (memberId: string, groupId: string) => void;
 };
 
-const GroupHeader = ({
+const GroupCard = ({
   group,
   teamId,
   token,
@@ -56,7 +56,9 @@ const GroupHeader = ({
 
     setIsEditing(false);
     startTransition(async () => {
-      const result = await updateGroup(teamId, token, group.id, { name: trimmedName });
+      const result = await updateGroup(teamId, token, group.id, {
+        name: trimmedName,
+      });
       if (result.success) {
         onGroupUpdated({ ...group, name: trimmedName });
       } else {
@@ -114,14 +116,14 @@ const GroupHeader = ({
   return (
     <div
       className={cn(
-        "group flex h-full min-h-[180px] flex-col rounded-2xl border-2 p-4 transition-all",
+        "group flex h-full min-h-45 flex-col rounded-2xl border-2 p-4 transition-all",
         isCurrentGroup
           ? "cursor-not-allowed border-transparent bg-neutral-100 opacity-50 dark:bg-neutral-800"
           : isDragOver
             ? "border-neutral-900 bg-neutral-200 dark:border-neutral-100 dark:bg-neutral-700"
             : isDragging
               ? "border-dashed border-neutral-400 bg-neutral-100 dark:border-neutral-500 dark:bg-neutral-800"
-              : "border-transparent bg-neutral-100 dark:bg-neutral-800"
+              : "border-transparent bg-neutral-100 dark:bg-neutral-800",
       )}
       onDragOver={canEdit ? handleDragOver : undefined}
       onDragLeave={canEdit ? handleDragLeave : undefined}
@@ -186,10 +188,9 @@ const GroupHeader = ({
             {memberCount} {memberCount === 1 ? "member" : "members"}
           </span>
         </div>
-
       </div>
     </div>
   );
 };
 
-export { GroupHeader };
+export { GroupCard };

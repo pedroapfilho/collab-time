@@ -12,6 +12,7 @@ import {
   getMinutesUntilAvailable,
   formatTimeUntilAvailable,
 } from "@/lib/timezones";
+import { Badge } from "@/components/ui/badge";
 import { cn, formatHour } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner";
 import { useDrag } from "@/contexts/drag-context";
@@ -55,7 +56,7 @@ const MemberCard = ({
       setIsTouchDevice(
         "ontouchstart" in window ||
           navigator.maxTouchPoints > 0 ||
-          window.matchMedia("(pointer: coarse)").matches
+          window.matchMedia("(pointer: coarse)").matches,
       );
     };
     checkTouchDevice();
@@ -69,7 +70,7 @@ const MemberCard = ({
       const available = isCurrentlyWorking(
         member.timezone,
         member.workingHoursStart,
-        member.workingHoursEnd
+        member.workingHoursEnd,
       );
       setIsAvailable(available);
 
@@ -78,8 +79,8 @@ const MemberCard = ({
           getMinutesUntilAvailable(
             member.timezone,
             member.workingHoursStart,
-            member.workingHoursEnd
-          )
+            member.workingHoursEnd,
+          ),
         );
       } else {
         setMinutesUntilAvailable(0);
@@ -119,8 +120,8 @@ const MemberCard = ({
     <>
       <div
         className={cn(
-          "group flex h-full min-h-[180px] flex-col rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm transition-all hover:border-neutral-300 hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-700",
-          isDraggable && (isDragging ? "cursor-grabbing" : "cursor-grab")
+          "group flex h-full min-h-45 flex-col rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm transition-all hover:border-neutral-300 hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-700",
+          isDraggable && (isDragging ? "cursor-grabbing" : "cursor-grab"),
         )}
         draggable={isDraggable}
         onDragStart={isDraggable ? handleDragStart : undefined}
@@ -193,31 +194,37 @@ const MemberCard = ({
           {/* Status badges */}
           <div className="mt-2 flex flex-wrap gap-1.5">
             {isAvailable ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+              <Badge className="border-transparent bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
                 <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
                 Available
-              </span>
+              </Badge>
             ) : (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className="inline-flex cursor-default items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                      <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                      Not Available
+                    <span>
+                      <Badge className="cursor-default border-transparent bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                        Not Available
+                      </Badge>
                     </span>
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>
-                      Available {formatTimeUntilAvailable(minutesUntilAvailable)}
+                      Available{" "}
+                      {formatTimeUntilAvailable(minutesUntilAvailable)}
                     </p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             )}
             {member.groupId && groups.find((g) => g.id === member.groupId) && (
-              <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
+              <Badge
+                variant="secondary"
+                className="border-transparent bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
+              >
                 {groups.find((g) => g.id === member.groupId)?.name}
-              </span>
+              </Badge>
             )}
           </div>
         </div>

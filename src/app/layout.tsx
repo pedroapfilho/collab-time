@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: {
     default: "Collab Time - Team Timezone Visualizer",
-    template: "%s | Collab Time",
+    template: "%s - Collab Time",
   },
   description:
     "Visualize your team's working hours across timezones. Find the perfect moment to connect with distributed teams. No account required.",
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000"
+      : "http://localhost:3000",
   ),
   openGraph: {
     type: "website",
@@ -81,12 +81,12 @@ const RootLayout = ({
         className={`${geistMono.variable} font-(family-name:--font-geist-mono) antialiased bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100 selection:bg-neutral-200 selection:text-neutral-900 min-h-screen flex flex-col`}
       >
         <Providers>
-          <div className="flex-1 flex flex-col">
-            {children}
-          </div>
+          <div className="flex-1 flex flex-col">{children}</div>
           <footer className="border-t border-neutral-200 px-4 py-6 text-sm text-neutral-500 dark:border-neutral-800 dark:text-neutral-400">
             <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3">
-              <span>© {new Date().getFullYear()} Collab Time. All rights reserved.</span>
+              <span>
+                © {new Date().getFullYear()} Collab Time. All rights reserved.
+              </span>
               <a
                 href="https://github.com/pedroapfilho/collab-time"
                 target="_blank"
@@ -123,8 +123,7 @@ const RootLayout = ({
                   "border border-amber-400/40 bg-neutral-50 text-neutral-900 shadow-lg dark:border-amber-300/30 dark:bg-neutral-900 dark:text-neutral-50",
                 error:
                   "border border-red-400/50 bg-neutral-50 text-neutral-900 shadow-lg dark:border-red-400/40 dark:bg-neutral-900 dark:text-neutral-50",
-                info:
-                  "border border-sky-400/40 bg-neutral-50 text-neutral-900 shadow-lg dark:border-sky-300/30 dark:bg-neutral-900 dark:text-neutral-50",
+                info: "border border-sky-400/40 bg-neutral-50 text-neutral-900 shadow-lg dark:border-sky-300/30 dark:bg-neutral-900 dark:text-neutral-50",
                 warning:
                   "border border-amber-400/50 bg-neutral-50 text-neutral-900 shadow-lg dark:border-amber-300/40 dark:bg-neutral-900 dark:text-neutral-50",
               },
