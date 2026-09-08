@@ -7,7 +7,7 @@ class HomePage {
   private readonly activeWorkspacesHeading: Locator;
 
   constructor(private readonly page: Page) {
-    this.heading = page.getByRole("heading", { name: "Collab Time" });
+    this.heading = page.getByRole("heading", { name: "Collabtime" });
     this.createWorkspaceButton = page.getByRole("button", {
       name: /create a workspace/i,
     });

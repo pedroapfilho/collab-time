@@ -1,3 +1,5 @@
+/// <reference types="node" />
+
 import { execFileSync } from "node:child_process";
 
 import { defineConfig, devices } from "@playwright/test";
@@ -30,9 +32,19 @@ export default defineConfig({
     {
       dependencies: ["setup"],
       name: "chromium",
+      testIgnore: /mobile\//,
       use: {
         ...devices["Desktop Chrome"],
         storageState: "tests/e2e/.auth/user.json",
+      },
+    },
+    {
+      name: "mobile-chromium",
+      testMatch: /mobile\/.*\.spec\.ts/,
+      use: {
+        ...devices["iPhone 13"],
+        browserName: "chromium",
+        storageState: { cookies: [], origins: [] },
       },
     },
     ...(process.env.CI
@@ -41,6 +53,7 @@ export default defineConfig({
           {
             dependencies: ["setup"],
             name: "firefox",
+            testIgnore: /mobile\//,
             use: {
               ...devices["Desktop Firefox"],
               storageState: "tests/e2e/.auth/user.json",
@@ -49,6 +62,7 @@ export default defineConfig({
           {
             dependencies: ["setup"],
             name: "webkit",
+            testIgnore: /mobile\//,
             use: {
               ...devices["Desktop Safari"],
               storageState: "tests/e2e/.auth/user.json",

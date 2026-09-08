@@ -4,6 +4,8 @@ Find the hour everyone is awake.
 
 [Try Collabtime](https://www.collabtime.io) · [MIT license](LICENSE)
 
+![Collabtime timeline demo](docs/assets/landing.png)
+
 ## What it does
 
 - See everyone's working hours on one timeline in your timezone.
