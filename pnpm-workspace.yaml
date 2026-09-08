@@ -1,3 +1,13 @@
+overrides:
+  # Security: force patched transitive releases to clear pnpm audit advisories.
+  # Each pin is the lowest patched version within the already-resolved major.
+  brace-expansion: "^1.1.18"
+  fast-uri: "^3.1.6"
+  mysql2: "^3.23.1"
+  nanoid: "^3.3.18"
+  qs: "^6.16.0"
+  vite: "^8.0.16"
+
 packages:
   - apps/*
   - packages/*
