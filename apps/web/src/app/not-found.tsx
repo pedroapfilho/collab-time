@@ -1,4 +1,4 @@
-import { buttonVariants } from "@repo/ui/components/button";
+import { buttonVariants } from "@repo/ui/components/button-variants";
 import Link from "next/link";
 
 /** @public Next.js app-router reads metadata via the module loader */

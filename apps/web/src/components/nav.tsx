@@ -1,7 +1,8 @@
 "use client";
 
 import { Badge } from "@repo/ui/components/badge";
-import { Button, buttonVariants } from "@repo/ui/components/button";
+import { Button } from "@repo/ui/components/button";
+import { buttonVariants } from "@repo/ui/components/button-variants";
 import { toast } from "@repo/ui/components/sonner";
 import { Archive, Lock, LogIn, Menu, X } from "lucide-react";
 import Link from "next/link";
@@ -44,13 +45,11 @@ type NavViewProps = NavProps & {
   signOut: ReturnType<typeof useSignOut>;
 };
 
-const NavView = (props: NavViewProps) => {
+const TeamNav = (props: Extract<NavViewProps, { variant: "team" }>) => {
   const { isAuthenticated } = props;
   const [hasCopied, setHasCopied] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { handleSignOut, isSigningOut } = props.signOut;
-
-  const variant = props.variant ?? "default";
 
   const handleCopyLink = async () => {
     try {
@@ -65,7 +64,125 @@ const NavView = (props: NavViewProps) => {
     }
   };
 
-  if (variant === "centered") {
+  const {
+    canDeleteWorkspace = false,
+    isAdmin,
+    isArchived = false,
+    isEditingName,
+    isPrivate = false,
+    onCancelEdit,
+    onDeleteWorkspace,
+    onEditName,
+    onEditVisibility,
+    onNameChange,
+    onSaveName,
+    teamName,
+  } = props;
+
+  const handleDeleteWorkspace = () => {
+    onDeleteWorkspace?.();
+  };
+
+  const signedInRole: MobileMenuRole = isAuthenticated ? "member" : "guest";
+  const navRole: MobileMenuRole = isAdmin ? "admin" : signedInRole;
+
+  return (
+    <header className="flex flex-col gap-6 border-b border-border pb-8">
+      <div className="flex items-center justify-between gap-3">
+        <Logo />
+
+        <div className="hidden items-center gap-2 sm:flex">
+          <CurrentTimeDisplay />
+          <CopyLinkButton
+            hasCopied={hasCopied}
+            onCopy={() => {
+              void handleCopyLink();
+            }}
+          />
+          <ModeToggle />
+          {canDeleteWorkspace && (
+            <WorkspaceMenu
+              onDeleteWorkspace={handleDeleteWorkspace}
+              onEditVisibility={onEditVisibility}
+            />
+          )}
+          <UserMenu
+            isSigningOut={isSigningOut}
+            navRole={navRole}
+            onSignOut={() => {
+              void handleSignOut();
+            }}
+          />
+        </div>
+
+        <div className="flex items-center gap-2 sm:hidden">
+          <Button
+            aria-controls="mobile-menu"
+            aria-expanded={mobileMenuOpen}
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            className="size-9"
+            onClick={() => {
+              setMobileMenuOpen(!mobileMenuOpen);
+            }}
+            size="icon"
+            variant="outline"
+          >
+            {mobileMenuOpen ? <X className="size-4" /> : <Menu className="size-4" />}
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex min-w-0 items-center gap-3">
+        <TeamTitle
+          isAdmin={isAdmin}
+          isEditing={isEditingName}
+          onCancel={onCancelEdit}
+          onChange={onNameChange}
+          onEdit={onEditName}
+          onSave={onSaveName}
+          teamName={teamName}
+        />
+        {isPrivate && (
+          <Badge variant="secondary">
+            <Lock aria-hidden />
+            Private
+          </Badge>
+        )}
+        {isArchived && (
+          <Badge variant="secondary">
+            <Archive />
+            Archived
+          </Badge>
+        )}
+      </div>
+
+      <MobileMenu
+        onClose={() => {
+          setMobileMenuOpen(false);
+        }}
+        onCopy={() => {
+          void handleCopyLink();
+        }}
+        onDeleteWorkspace={handleDeleteWorkspace}
+        onEditVisibility={onEditVisibility}
+        onSignOut={() => {
+          void handleSignOut();
+        }}
+        permissions={{
+          canDeleteWorkspace,
+          canEditVisibility: canDeleteWorkspace && Boolean(onEditVisibility),
+        }}
+        role={navRole}
+        state={{ hasCopied, isOpen: mobileMenuOpen, isSigningOut }}
+      />
+    </header>
+  );
+};
+
+const NavView = (props: NavViewProps) => {
+  const { isAuthenticated } = props;
+  const { handleSignOut, isSigningOut } = props.signOut;
+  if (props.variant === "centered") {
     return (
       <header className="flex items-center justify-center px-4 py-8 sm:px-6">
         <Logo />
@@ -73,123 +190,8 @@ const NavView = (props: NavViewProps) => {
     );
   }
 
-  if (variant === "team") {
-    if (props.variant !== "team") {
-      return null;
-    }
-    const {
-      canDeleteWorkspace = false,
-      isAdmin,
-      isArchived = false,
-      isEditingName,
-      isPrivate = false,
-      onCancelEdit,
-      onDeleteWorkspace,
-      onEditName,
-      onEditVisibility,
-      onNameChange,
-      onSaveName,
-      teamName,
-    } = props;
-
-    const handleDeleteWorkspace = () => {
-      onDeleteWorkspace?.();
-    };
-
-    const signedInRole: MobileMenuRole = isAuthenticated ? "member" : "guest";
-    const navRole: MobileMenuRole = isAdmin ? "admin" : signedInRole;
-
-    return (
-      <header className="flex flex-col gap-6 border-b border-border pb-8">
-        <div className="flex items-center justify-between gap-3">
-          <Logo />
-
-          <div className="hidden items-center gap-2 sm:flex">
-            <CurrentTimeDisplay />
-            <CopyLinkButton
-              hasCopied={hasCopied}
-              onCopy={() => {
-                void handleCopyLink();
-              }}
-            />
-            <ModeToggle />
-            {canDeleteWorkspace && (
-              <WorkspaceMenu
-                onDeleteWorkspace={handleDeleteWorkspace}
-                onEditVisibility={onEditVisibility}
-              />
-            )}
-            <UserMenu
-              isSigningOut={isSigningOut}
-              navRole={navRole}
-              onSignOut={() => {
-                void handleSignOut();
-              }}
-            />
-          </div>
-
-          <div className="flex items-center gap-2 sm:hidden">
-            <Button
-              aria-controls="mobile-menu"
-              aria-expanded={mobileMenuOpen}
-              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-              className="size-9"
-              onClick={() => {
-                setMobileMenuOpen(!mobileMenuOpen);
-              }}
-              size="icon"
-              variant="outline"
-            >
-              {mobileMenuOpen ? <X className="size-4" /> : <Menu className="size-4" />}
-            </Button>
-          </div>
-        </div>
-
-        <div className="flex min-w-0 items-center gap-3">
-          <TeamTitle
-            isAdmin={isAdmin}
-            isEditing={isEditingName}
-            onCancel={onCancelEdit}
-            onChange={onNameChange}
-            onEdit={onEditName}
-            onSave={onSaveName}
-            teamName={teamName}
-          />
-          {isPrivate && (
-            <Badge variant="secondary">
-              <Lock aria-hidden />
-              Private
-            </Badge>
-          )}
-          {isArchived && (
-            <Badge variant="secondary">
-              <Archive />
-              Archived
-            </Badge>
-          )}
-        </div>
-
-        <MobileMenu
-          onClose={() => {
-            setMobileMenuOpen(false);
-          }}
-          onCopy={() => {
-            void handleCopyLink();
-          }}
-          onDeleteWorkspace={handleDeleteWorkspace}
-          onEditVisibility={onEditVisibility}
-          onSignOut={() => {
-            void handleSignOut();
-          }}
-          permissions={{
-            canDeleteWorkspace,
-            canEditVisibility: canDeleteWorkspace && Boolean(onEditVisibility),
-          }}
-          role={navRole}
-          state={{ hasCopied, isOpen: mobileMenuOpen, isSigningOut }}
-        />
-      </header>
-    );
+  if (props.variant === "team") {
+    return <TeamNav {...props} />;
   }
 
   return (

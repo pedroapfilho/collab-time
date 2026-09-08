@@ -49,11 +49,13 @@ const params = Promise.resolve({ teamId: "550e8400-e29b-41d4-a716-446655440000" 
 
 beforeEach(() => {
   vi.resetAllMocks();
+  mocks.findMembership.mockResolvedValue(null);
   mocks.findSpace.mockResolvedValue({
     accessPassword: "hash",
     id: "space-1",
     isPrivate: true,
     ownerId: "owner",
+    teamId: "550e8400-e29b-41d4-a716-446655440000",
   });
   mocks.getSession.mockResolvedValue(createMockSession());
   mocks.getPublicTeam.mockResolvedValue({ error: "Unavailable", success: false });

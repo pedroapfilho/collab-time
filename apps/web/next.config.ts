@@ -25,7 +25,6 @@ const nextConfig: NextConfig = {
       },
     ]),
   partialPrefetching: true,
-  reactCompiler: true,
   reactStrictMode: true,
   transpilePackages: ["@repo/observability", "@repo/ui"],
   turbopack: {
@@ -44,14 +43,17 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
-  authToken: process.env.SENTRY_AUTH_TOKEN,
-  org: "unlockers-io",
-  project: "collabtime-web",
-  silent: false,
-  sourcemaps: {
-    deleteSourcemapsAfterUpload: true,
-  },
-  tunnelRoute: process.env.GITHUB_ACTIONS ? undefined : "/monitoring",
-  widenClientFileUpload: true,
-});
+export default {
+  ...withSentryConfig(nextConfig, {
+    authToken: process.env.SENTRY_AUTH_TOKEN,
+    org: "unlockers-io",
+    project: "collabtime-web",
+    silent: false,
+    sourcemaps: {
+      deleteSourcemapsAfterUpload: true,
+    },
+    tunnelRoute: process.env.GITHUB_ACTIONS ? undefined : "/monitoring",
+    widenClientFileUpload: true,
+  }),
+  reactCompiler: true,
+};
