@@ -1,6 +1,7 @@
 "use client";
 
-import { Button, buttonVariants } from "@repo/ui/components/button";
+import { Button } from "@repo/ui/components/button";
+import { buttonVariants } from "@repo/ui/components/button-variants";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@repo/ui/components/field";
 import { Input } from "@repo/ui/components/input";
 import { toast } from "@repo/ui/components/sonner";

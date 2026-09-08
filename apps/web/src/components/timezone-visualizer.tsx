@@ -241,9 +241,9 @@ const TimezoneVisualizer = ({
           })}
         </ScrollArea>
 
-        {members.length >= 2 && (
-          <AnimatePresence mode="popLayout">
-            {isComparing ? (
+        <AnimatePresence mode="popLayout">
+          {members.length >= 2 &&
+            (isComparing ? (
               <m.div
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -282,9 +282,8 @@ const TimezoneVisualizer = ({
               >
                 <FindMeetingTimeButton onClick={openComparePanel} />
               </m.div>
-            )}
-          </AnimatePresence>
-        )}
+            ))}
+        </AnimatePresence>
 
         <Legend
           canShowOverlap={canShowOverlap}

@@ -37,6 +37,68 @@ type MemberCardProps = {
   teamId: string;
 };
 
+const MemberDetails = ({
+  groups,
+  isAvailable,
+  isOwnProfile,
+  member,
+  minutesUntilAvailable,
+}: Pick<MemberCardProps, "groups" | "member"> & {
+  isAvailable: boolean;
+  isOwnProfile: boolean;
+  minutesUntilAvailable: number;
+}) => {
+  const memberGroupName =
+    member.groupId !== undefined && member.groupId !== ""
+      ? groups.find((g) => g.id === member.groupId)?.name
+      : undefined;
+
+  return (
+    <div className="flex flex-1 flex-col gap-1.5">
+      <div className="flex flex-col gap-0.5">
+        <span className="flex items-center gap-1.5 font-semibold text-foreground">
+          {member.name}
+          {isOwnProfile && (
+            <Badge className="border-transparent text-xs" variant="secondary">
+              You
+            </Badge>
+          )}
+        </span>
+        {member.title && <span className="text-sm text-muted-foreground">{member.title}</span>}
+      </div>
+
+      <div className="mt-auto flex flex-col gap-1 text-xs text-muted-foreground">
+        <span className="truncate">{formatTimezoneLabel(member.timezone)}</span>
+        <span className="font-mono tabular-nums">
+          {formatHour(member.workingHoursStart)} – {formatHour(member.workingHoursEnd)}
+        </span>
+      </div>
+
+      <div className="flex flex-wrap gap-1.5">
+        {isAvailable ? (
+          <Badge variant="success">Available</Badge>
+        ) : (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger render={<span />}>
+                <Badge className="cursor-help" variant="warning">
+                  Not Available
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Available {formatTimeUntilAvailable(minutesUntilAvailable)}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+        {memberGroupName !== undefined && memberGroupName !== "" && (
+          <Badge variant="secondary">{memberGroupName}</Badge>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const MemberCard = ({
   canEdit,
   currentUserId,
@@ -78,11 +140,6 @@ const MemberCard = ({
       }
     });
   };
-
-  const memberGroupName =
-    member.groupId !== undefined && member.groupId !== ""
-      ? groups.find((g) => g.id === member.groupId)?.name
-      : undefined;
 
   return (
     <>
@@ -138,48 +195,13 @@ const MemberCard = ({
           )}
         </div>
 
-        <div className="flex flex-1 flex-col gap-1.5">
-          <div className="flex flex-col gap-0.5">
-            <span className="flex items-center gap-1.5 font-semibold text-foreground">
-              {member.name}
-              {isOwnProfile && (
-                <Badge className="border-transparent text-xs" variant="secondary">
-                  You
-                </Badge>
-              )}
-            </span>
-            {member.title && <span className="text-sm text-muted-foreground">{member.title}</span>}
-          </div>
-
-          <div className="mt-auto flex flex-col gap-1 text-xs text-muted-foreground">
-            <span className="truncate">{formatTimezoneLabel(member.timezone)}</span>
-            <span className="font-mono tabular-nums">
-              {formatHour(member.workingHoursStart)} – {formatHour(member.workingHoursEnd)}
-            </span>
-          </div>
-
-          <div className="flex flex-wrap gap-1.5">
-            {isAvailable ? (
-              <Badge variant="success">Available</Badge>
-            ) : (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger render={<span />}>
-                    <Badge className="cursor-help" variant="warning">
-                      Not Available
-                    </Badge>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Available {formatTimeUntilAvailable(minutesUntilAvailable)}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-            {memberGroupName !== undefined && memberGroupName !== "" && (
-              <Badge variant="secondary">{memberGroupName}</Badge>
-            )}
-          </div>
-        </div>
+        <MemberDetails
+          groups={groups}
+          isAvailable={isAvailable}
+          isOwnProfile={isOwnProfile}
+          member={member}
+          minutesUntilAvailable={minutesUntilAvailable}
+        />
       </Card>
 
       {canEdit && (

@@ -1,8 +1,6 @@
 "use client";
 
 import { toast } from "@repo/ui/components/sonner";
-import { captureException } from "@sentry/nextjs";
-import { useQuery } from "@tanstack/react-query";
 import { Clock, FolderKanban, Users } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
@@ -25,8 +23,6 @@ import {
 import { TeamInsights } from "@/components/team-insights";
 import { TimezoneVisualizer } from "@/components/timezone-visualizer";
 import { useTeamMutation, useTeamQuery } from "@/hooks/use-team-query";
-import { requestToJoin } from "@/lib/actions/join-requests";
-import { getTeamMembershipRole } from "@/lib/actions/team-read";
 import type { TeamStatus } from "@/types";
 
 import { GroupsGrid } from "./client/groups-grid";
@@ -34,6 +30,7 @@ import { JoinPrompt } from "./client/join-prompt";
 import { MembersGrid } from "./client/members-grid";
 import { useCollapsedGroups } from "./client/use-collapsed-groups";
 import { useDragEnd } from "./client/use-drag-end";
+import { useTeamMembership } from "./client/use-team-membership";
 import { useTeamNameEdit } from "./client/use-team-name-edit";
 import Loading from "./loading";
 
@@ -54,6 +51,28 @@ type TeamPageClientProps = {
   userId?: string;
 };
 
+type MembershipActionsProps = {
+  isAdmin: boolean;
+  isAuthenticated: boolean;
+  isMember: boolean;
+  isRequestingJoin: boolean;
+  onRequestJoin: () => void;
+  teamId: string;
+  teamStatus: TeamStatus;
+};
+
+const MembershipActions = ({ isAdmin, isMember, ...props }: MembershipActionsProps) => {
+  if (isAdmin) {
+    return <JoinRequestsPanel teamId={props.teamId} />;
+  }
+  if (isMember) {
+    return (
+      <p className="text-center text-sm text-muted-foreground">You are a member of this team</p>
+    );
+  }
+  return <JoinPrompt {...props} />;
+};
+
 const TeamPageClient = ({
   isArchived,
   isAuthenticated,
@@ -63,33 +82,12 @@ const TeamPageClient = ({
   userId,
 }: TeamPageClientProps) => {
   const { push } = useRouter();
-  const [statusOverride, setStatusOverride] = useState<TeamStatus | null>(null);
   const [activeDragType, setActiveDragType] = useState<"group" | "member" | null>(null);
-  const [isRequestingJoin, setIsRequestingJoin] = useState(false);
   const [isDeleteWorkspaceOpen, setIsDeleteWorkspaceOpen] = useState(false);
 
   const { data: teamData, error: teamError } = useTeamQuery({ teamId });
 
-  const { data: resolvedRole, error: resolvedRoleError } = useQuery({
-    enabled: initialStatus === "none" && Boolean(userId),
-    queryFn: () => getTeamMembershipRole(teamId),
-    queryKey: ["membership-role", teamId, userId],
-  });
-
-  const serverStatus: TeamStatus =
-    initialStatus === "none" ? (resolvedRole ?? "none") : initialStatus;
-  const teamStatus: TeamStatus = statusOverride ?? serverStatus;
-
-  const isAdmin = teamStatus === "ADMIN";
-  const isMember = teamStatus === "ADMIN" || teamStatus === "MEMBER";
-
   const teamMutation = useTeamMutation(teamId);
-
-  useEffect(() => {
-    if (resolvedRoleError) {
-      captureException(resolvedRoleError);
-    }
-  }, [resolvedRoleError]);
 
   useEffect(() => {
     if (teamError) {
@@ -102,11 +100,15 @@ const TeamPageClient = ({
   const members = teamData?.team?.members ?? [];
   const groups = teamData?.team?.groups ?? [];
 
-  const currentUserId = isMember ? userId : undefined;
-  const hasClaimedProfile =
-    currentUserId !== undefined &&
-    currentUserId !== "" &&
-    members.some((member) => member.userId === currentUserId);
+  const {
+    currentUserId,
+    handleRequestJoin,
+    hasClaimedProfile,
+    isAdmin,
+    isMember,
+    isRequestingJoin,
+    teamStatus,
+  } = useTeamMembership({ initialStatus, members, teamId, userId });
 
   const teamName = teamData?.team?.name ?? "";
 
@@ -120,23 +122,6 @@ const TeamPageClient = ({
   } = useTeamNameEdit({ isAdmin, teamId, teamName });
 
   const { collapsedGroupIds, toggleGroupCollapse } = useCollapsedGroups(members);
-
-  const handleRequestJoin = async () => {
-    setIsRequestingJoin(true);
-    try {
-      const result = await requestToJoin(teamId);
-      if (result.success) {
-        setStatusOverride("PENDING");
-        toast.success("Join request sent! The team admin will review it.");
-      } else {
-        toast.error(result.error);
-      }
-    } catch (error) {
-      captureException(error);
-      toast.error("Failed to send join request");
-    }
-    setIsRequestingJoin(false);
-  };
 
   const orderedMembers = [...members].toSorted((a, b) => (a.order ?? 0) - (b.order ?? 0));
   const orderedGroups = [...groups].toSorted((a, b) => a.order - b.order);
@@ -213,23 +198,17 @@ const TeamPageClient = ({
                 teamId={teamId}
               />
 
-              {isAdmin && <JoinRequestsPanel teamId={teamId} />}
-              {!isAdmin && isMember && (
-                <p className="text-center text-sm text-muted-foreground">
-                  You are a member of this team
-                </p>
-              )}
-              {!isAdmin && !isMember && (
-                <JoinPrompt
-                  isAuthenticated={isAuthenticated}
-                  isRequestingJoin={isRequestingJoin}
-                  onRequestJoin={() => {
-                    void handleRequestJoin();
-                  }}
-                  teamId={teamId}
-                  teamStatus={teamStatus}
-                />
-              )}
+              <MembershipActions
+                isAdmin={isAdmin}
+                isAuthenticated={isAuthenticated}
+                isMember={isMember}
+                isRequestingJoin={isRequestingJoin}
+                onRequestJoin={() => {
+                  void handleRequestJoin();
+                }}
+                teamId={teamId}
+                teamStatus={teamStatus}
+              />
             </SectionCardContent>
             {isAdmin && (
               <SectionCardFooter bordered className="justify-end">
