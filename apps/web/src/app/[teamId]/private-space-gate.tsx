@@ -114,54 +114,68 @@ const PrivateSpaceGate = ({ isAuthenticated, spaceId, teamId }: PrivateSpaceGate
             </button>
           </div>
         ) : (
-          <form
-            noValidate
-            onSubmit={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              void form.handleSubmit();
-            }}
-          >
-            <FieldGroup>
-              <form.Field name="password">
-                {(field) => {
-                  const isInvalid =
-                    Boolean(serverError) ||
-                    (field.state.meta.isTouched && !field.state.meta.isValid);
-                  return (
-                    <Field data-invalid={isInvalid || undefined}>
-                      <FieldLabel htmlFor="space-password">Password</FieldLabel>
-                      <Input
-                        aria-invalid={isInvalid}
-                        autoComplete="current-password"
-                        disabled={isPending}
-                        id="space-password"
-                        onBlur={field.handleBlur}
-                        onChange={(e) => {
-                          setServerError(null);
-                          field.handleChange(e.target.value);
-                        }}
-                        type="password"
-                        value={field.state.value}
-                      />
-                      {serverError !== null && serverError !== "" ? (
-                        <FieldError errors={[serverError]} />
-                      ) : (
-                        isInvalid && <FieldError errors={field.state.meta.errors} />
-                      )}
-                    </Field>
-                  );
-                }}
-              </form.Field>
+          <div>
+            {!isAuthenticated && (
+              <p className="mb-5 text-center text-sm">
+                <Link className="underline underline-offset-4" href={withRedirect("/login")}>
+                  Sign in
+                </Link>
+                {" or "}
+                <Link className="underline underline-offset-4" href={withRedirect("/signup")}>
+                  sign up
+                </Link>
+                {" to accept an invitation or access your workspace."}
+              </p>
+            )}
+            <form
+              noValidate
+              onSubmit={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                void form.handleSubmit();
+              }}
+            >
+              <FieldGroup>
+                <form.Field name="password">
+                  {(field) => {
+                    const isInvalid =
+                      Boolean(serverError) ||
+                      (field.state.meta.isTouched && !field.state.meta.isValid);
+                    return (
+                      <Field data-invalid={isInvalid || undefined}>
+                        <FieldLabel htmlFor="space-password">Password</FieldLabel>
+                        <Input
+                          aria-invalid={isInvalid}
+                          autoComplete="current-password"
+                          disabled={isPending}
+                          id="space-password"
+                          onBlur={field.handleBlur}
+                          onChange={(e) => {
+                            setServerError(null);
+                            field.handleChange(e.target.value);
+                          }}
+                          type="password"
+                          value={field.state.value}
+                        />
+                        {serverError !== null && serverError !== "" ? (
+                          <FieldError errors={[serverError]} />
+                        ) : (
+                          isInvalid && <FieldError errors={field.state.meta.errors} />
+                        )}
+                      </Field>
+                    );
+                  }}
+                </form.Field>
 
-              <Field>
-                <Button aria-busy={isPending} disabled={isPending} type="submit">
-                  {isPending && <Spinner className="mr-2 size-4" />}
-                  {isPending ? "Checking…" : "Continue"}
-                </Button>
-              </Field>
-            </FieldGroup>
-          </form>
+                <Field>
+                  <Button aria-busy={isPending} disabled={isPending} type="submit">
+                    {isPending && <Spinner className="mr-2 size-4" />}
+                    {isPending ? "Checking…" : "Continue"}
+                  </Button>
+                </Field>
+              </FieldGroup>
+            </form>
+          </div>
         )}
       </div>
     </main>

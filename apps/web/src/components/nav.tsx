@@ -3,13 +3,15 @@
 import { Badge } from "@repo/ui/components/badge";
 import { Button, buttonVariants } from "@repo/ui/components/button";
 import { toast } from "@repo/ui/components/sonner";
-import { Archive, LogIn, Menu, X } from "lucide-react";
+import { Archive, Lock, LogIn, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
 import { useSignOut } from "@/hooks/use-sign-out";
+import { APP_REPO_URL } from "@/lib/constants";
 
 import { CurrentTimeDisplay } from "./current-time-display";
+import { GithubIcon } from "./github-icon";
 import { ModeToggle } from "./mode-toggle";
 import { CopyLinkButton } from "./nav/copy-link-button";
 import { Logo } from "./nav/logo";
@@ -26,9 +28,11 @@ type NavProps = { isAuthenticated: boolean } & (
       isAdmin: boolean;
       isArchived?: boolean;
       isEditingName: boolean;
+      isPrivate?: boolean;
       onCancelEdit: () => void;
       onDeleteWorkspace?: () => void;
       onEditName: () => void;
+      onEditVisibility?: () => void;
       onNameChange: (name: string) => void;
       onSaveName: () => void;
       teamName: string;
@@ -78,9 +82,11 @@ const NavView = (props: NavViewProps) => {
       isAdmin,
       isArchived = false,
       isEditingName,
+      isPrivate = false,
       onCancelEdit,
       onDeleteWorkspace,
       onEditName,
+      onEditVisibility,
       onNameChange,
       onSaveName,
       teamName,
@@ -107,7 +113,12 @@ const NavView = (props: NavViewProps) => {
               }}
             />
             <ModeToggle />
-            {canDeleteWorkspace && <WorkspaceMenu onDeleteWorkspace={handleDeleteWorkspace} />}
+            {canDeleteWorkspace && (
+              <WorkspaceMenu
+                onDeleteWorkspace={handleDeleteWorkspace}
+                onEditVisibility={onEditVisibility}
+              />
+            )}
             <UserMenu
               isSigningOut={isSigningOut}
               navRole={navRole}
@@ -144,6 +155,12 @@ const NavView = (props: NavViewProps) => {
             onSave={onSaveName}
             teamName={teamName}
           />
+          {isPrivate && (
+            <Badge variant="secondary">
+              <Lock aria-hidden />
+              Private
+            </Badge>
+          )}
           {isArchived && (
             <Badge variant="secondary">
               <Archive />
@@ -160,10 +177,14 @@ const NavView = (props: NavViewProps) => {
             void handleCopyLink();
           }}
           onDeleteWorkspace={handleDeleteWorkspace}
+          onEditVisibility={onEditVisibility}
           onSignOut={() => {
             void handleSignOut();
           }}
-          permissions={{ canDeleteWorkspace }}
+          permissions={{
+            canDeleteWorkspace,
+            canEditVisibility: canDeleteWorkspace && Boolean(onEditVisibility),
+          }}
           role={navRole}
           state={{ hasCopied, isOpen: mobileMenuOpen, isSigningOut }}
         />
@@ -175,6 +196,17 @@ const NavView = (props: NavViewProps) => {
     <header className="mx-auto flex w-full max-w-450 items-center justify-between px-4 py-6 sm:px-6 lg:px-8 xl:px-12">
       <Logo />
       <div className="flex items-center gap-2">
+        {!isAuthenticated && (
+          <a
+            aria-label="View on GitHub"
+            className={buttonVariants({ size: "icon", variant: "ghost" })}
+            href={APP_REPO_URL}
+            rel="noreferrer"
+            target="_blank"
+          >
+            <GithubIcon />
+          </a>
+        )}
         <ModeToggle />
         {isAuthenticated ? (
           <UserMenu
@@ -187,10 +219,11 @@ const NavView = (props: NavViewProps) => {
         ) : (
           <Link
             aria-label="Sign in"
-            className={buttonVariants({ size: "icon", variant: "outline" })}
+            className={buttonVariants({ size: "sm", variant: "outline" })}
             href="/login"
           >
-            <LogIn aria-hidden className="size-4" />
+            <LogIn aria-hidden className="size-4 sm:hidden" />
+            <span className="max-sm:hidden">Sign in</span>
           </Link>
         )}
       </div>

@@ -24,6 +24,7 @@ import {
 } from "@/components/section-card";
 import { TeamInsights } from "@/components/team-insights";
 import { TimezoneVisualizer } from "@/components/timezone-visualizer";
+import { WorkspaceVisibilityDialog } from "@/components/workspace-visibility-dialog";
 import { useTeamMutation, useTeamQuery } from "@/hooks/use-team-query";
 import { requestToJoin } from "@/lib/actions/join-requests";
 import { getTeamMembershipRole } from "@/lib/actions/team-read";
@@ -36,6 +37,7 @@ import { useCollapsedGroups } from "./client/use-collapsed-groups";
 import { useDragEnd } from "./client/use-drag-end";
 import { useTeamNameEdit } from "./client/use-team-name-edit";
 import Loading from "./loading";
+import { TeamUnavailable } from "./team-unavailable";
 
 const DndWrapper = dynamic(
   async () => {
@@ -46,8 +48,11 @@ const DndWrapper = dynamic(
 );
 
 type TeamPageClientProps = {
+  hasPassword?: boolean;
+  invitationId?: string;
   isArchived: boolean;
   isAuthenticated: boolean;
+  isPrivate: boolean;
   spaceId: string | null;
   teamId: string;
   teamStatus: TeamStatus;
@@ -55,20 +60,29 @@ type TeamPageClientProps = {
 };
 
 const TeamPageClient = ({
+  hasPassword = false,
+  invitationId,
   isArchived,
   isAuthenticated,
+  isPrivate,
   spaceId,
   teamId,
   teamStatus: initialStatus,
   userId,
 }: TeamPageClientProps) => {
-  const { push } = useRouter();
+  const { push, refresh } = useRouter();
+  const [isVisibilityOpen, setIsVisibilityOpen] = useState(false);
+  const [savedVisibility, setSavedVisibility] = useState<{
+    hasPassword: boolean;
+    isPrivate: boolean;
+  } | null>(null);
+  const visibility = savedVisibility ?? { hasPassword, isPrivate };
   const [statusOverride, setStatusOverride] = useState<TeamStatus | null>(null);
   const [activeDragType, setActiveDragType] = useState<"group" | "member" | null>(null);
   const [isRequestingJoin, setIsRequestingJoin] = useState(false);
   const [isDeleteWorkspaceOpen, setIsDeleteWorkspaceOpen] = useState(false);
 
-  const { data: teamData, error: teamError } = useTeamQuery({ teamId });
+  const { data: teamData, error: teamError, isFetching, refetch } = useTeamQuery({ teamId });
 
   const { data: resolvedRole, error: resolvedRoleError } = useQuery({
     enabled: initialStatus === "none" && Boolean(userId),
@@ -166,11 +180,15 @@ const TeamPageClient = ({
           isArchived={isArchived}
           isAuthenticated={isAuthenticated}
           isEditingName={isEditingName}
+          isPrivate={visibility.isPrivate}
           onCancelEdit={handleCancelEditName}
           onDeleteWorkspace={() => {
             setIsDeleteWorkspaceOpen(true);
           }}
           onEditName={handleStartEditName}
+          onEditVisibility={() => {
+            setIsVisibilityOpen(true);
+          }}
           onNameChange={setEditingTeamName}
           onSaveName={handleSaveName}
           teamName={displayName}
@@ -221,6 +239,7 @@ const TeamPageClient = ({
               )}
               {!isAdmin && !isMember && (
                 <JoinPrompt
+                  invitationId={invitationId}
                   isAuthenticated={isAuthenticated}
                   isRequestingJoin={isRequestingJoin}
                   onRequestJoin={() => {
@@ -266,6 +285,19 @@ const TeamPageClient = ({
         </div>
       </main>
 
+      {spaceId !== null && isVisibilityOpen && (
+        <WorkspaceVisibilityDialog
+          hasPassword={visibility.hasPassword}
+          isPrivate={visibility.isPrivate}
+          onOpenChange={setIsVisibilityOpen}
+          onSaved={(saved) => {
+            setSavedVisibility(saved);
+            refresh();
+          }}
+          open={isVisibilityOpen}
+          spaceId={spaceId}
+        />
+      )}
       {spaceId !== null && (
         <DeleteWorkspaceDialog
           onDeleted={() => {
@@ -279,6 +311,18 @@ const TeamPageClient = ({
       )}
     </div>
   );
+
+  if (teamError && !isLoaded) {
+    return (
+      <TeamUnavailable
+        isRetrying={isFetching}
+        message={teamError.message}
+        onRetry={() => {
+          void refetch();
+        }}
+      />
+    );
+  }
 
   if (!isLoaded) {
     return <Loading />;

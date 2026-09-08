@@ -20,19 +20,19 @@ const InvitationEmail = ({
   teamUrl,
 }: InvitationEmailProps) => {
   return (
-    <BaseLayout preview={`${inviterName} invited you to join ${teamName} on Collab Time`}>
+    <BaseLayout preview={`${inviterName} invited you to join ${teamName} on Collabtime`}>
       <Heading className="mt-0 mb-4 text-2xl font-semibold tracking-tight text-balance break-words text-foreground">
         You&apos;ve been invited
       </Heading>
 
       <Text className="m-0 mb-6 text-base text-pretty break-words text-muted-foreground">
         <strong className="text-foreground">{inviterName}</strong> invited you to join{" "}
-        <strong className="text-foreground">{teamName}</strong> on Collab Time.
+        <strong className="text-foreground">{teamName}</strong> on Collabtime.
       </Text>
 
       <div className="mb-6">
         <Button fullWidth href={teamUrl} variant="primary">
-          View invitation
+          Open workspace
         </Button>
       </div>
 

@@ -5,6 +5,15 @@ export default defineConfig({
   extends: [awesomeness],
   overrides: [
     {
+      // Next route entrypoints and client hooks require their framework context; mock that boundary, not the behavior under test.
+      files: [
+        "apps/web/src/app/[[]teamId]/page.test.tsx",
+        "apps/web/src/components/accept-workspace-invitation.test.tsx",
+        "apps/web/src/app/og/route.test.tsx",
+      ],
+      rules: { "anti-slop/no-module-mocking": "off" },
+    },
+    {
       files: [
         "apps/web/src/components/group-card.tsx",
         "apps/web/src/components/nav/team-title.tsx",

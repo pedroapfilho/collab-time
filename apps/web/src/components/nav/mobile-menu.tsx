@@ -1,10 +1,11 @@
 "use client";
 
 import { Button, buttonVariants } from "@repo/ui/components/button";
-import { Check, Copy, LogIn, LogOut, Settings, Shield, Trash2, User } from "lucide-react";
+import { Check, Copy, Lock, LogIn, LogOut, Settings, Shield, Trash2, User } from "lucide-react";
 import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import Link from "next/link";
 
+import { CurrentTimeDisplay } from "@/components/current-time-display";
 import { ModeToggle } from "@/components/mode-toggle";
 import { cn } from "@/lib/utils";
 
@@ -16,8 +17,9 @@ type MobileMenuProps = {
   onClose: () => void;
   onCopy: () => void;
   onDeleteWorkspace: () => void;
+  onEditVisibility?: () => void;
   onSignOut: () => void;
-  permissions: { canDeleteWorkspace: boolean };
+  permissions: { canDeleteWorkspace: boolean; canEditVisibility?: boolean };
   role: MobileMenuRole;
   state: { hasCopied: boolean; isOpen: boolean; isSigningOut: boolean };
 };
@@ -26,8 +28,9 @@ const MobileMenu = ({
   onClose,
   onCopy,
   onDeleteWorkspace,
+  onEditVisibility,
   onSignOut,
-  permissions: { canDeleteWorkspace },
+  permissions: { canDeleteWorkspace, canEditVisibility = false },
   role,
   state: { hasCopied, isOpen, isSigningOut },
 }: MobileMenuProps) => {
@@ -61,6 +64,7 @@ const MobileMenu = ({
               </div>
             </div>
 
+            <CurrentTimeDisplay />
             <div className="flex flex-col gap-1">
               <Button
                 className="justify-start"
@@ -127,6 +131,19 @@ const MobileMenu = ({
                 </>
               )}
 
+              {canEditVisibility && (
+                <Button
+                  className="justify-start"
+                  onClick={() => {
+                    onEditVisibility?.();
+                    onClose();
+                  }}
+                  variant="ghost"
+                >
+                  <Lock aria-hidden className="size-4" />
+                  Sharing &amp; privacy
+                </Button>
+              )}
               {canDeleteWorkspace && (
                 <Button
                   className="justify-start text-destructive hover:bg-destructive/10 hover:text-destructive"

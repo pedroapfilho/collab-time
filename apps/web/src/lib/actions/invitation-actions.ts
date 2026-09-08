@@ -4,6 +4,7 @@ import { prisma } from "@repo/db";
 import { sendTransactionalEmail } from "@repo/transactional";
 import { after } from "next/server";
 
+import { getAppUrl } from "@/lib/app-url";
 import { getEnv } from "@/lib/env";
 import { log } from "@/lib/observability";
 import { requireAuth, requireTeamAdmin } from "@/lib/team-auth";
@@ -96,7 +97,6 @@ const inviteMember = async (
     let emailSent = false;
     const apiKey = getEnv("RESEND_API_KEY");
     const fromEmail = getEnv("RESEND_FROM_EMAIL");
-    const webAppUrl = getEnv("WEB_APP_URL") ?? "";
 
     if (apiKey === undefined) {
       after(() => {
@@ -114,7 +114,7 @@ const inviteMember = async (
           recipientEmail: trimmedEmail,
           teamId,
           teamName: team.name,
-          teamUrl: webAppUrl,
+          teamUrl: `${getAppUrl()}/${teamId}`,
           type: "invitation",
         },
         emailOptions,

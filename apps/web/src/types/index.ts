@@ -35,7 +35,7 @@ const jsonValueSchema = z.json();
 type TeamRole = z.infer<typeof teamRoleSchema>;
 type TeamRoleInput = z.infer<typeof jsonValueSchema> | undefined;
 
-type TeamStatus = "ADMIN" | "MEMBER" | "PENDING" | "none";
+type TeamStatus = "INVITED" | "ADMIN" | "MEMBER" | "PENDING" | "none";
 
 const isTeamRole = (value: TeamRoleInput): value is TeamRole =>
   teamRoleSchema.safeParse(value).success;
