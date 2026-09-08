@@ -20,7 +20,7 @@
     "preview": "portless run --force --name collabtime.email -- bash -c 'email dev --port $PORT --dir ./src'"
   },
   "dependencies": {
-    "resend": "^6.24.0",
+    "resend": "^6.26.0",
     "zod": "^4.5.4"
   },
   "devDependencies": {
@@ -28,11 +28,11 @@
     "@repo/config-vitest": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.5",
+    "@types/react-dom": "^19.2.7",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-email": "^6.9.3",
-    "tsdown": "^0.22.14",
+    "tsdown": "^0.23.0",
     "typescript": "^7.0.2",
     "vitest": "^4.1.11"
   },
