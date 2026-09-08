@@ -53,5 +53,5 @@ This document records the defaults used across the collabtime monorepo. New code
 
 ## Routes
 
-- Better Auth is mounted at `/api/auth/[...all]`; everything else sits under `/api/*` (spaces, subscription).
+- Better Auth is mounted at `/api/auth/[...all]`; everything else sits under `/api/*` (spaces, teams, invitations).
 - Path alias: `@/*` maps to `src/*` in every app and package.

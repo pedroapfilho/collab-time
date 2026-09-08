@@ -10,24 +10,16 @@
       "env": [
         "AUTH_ALLOWED_HOSTS",
         "BETTER_AUTH_SECRET",
-        "BETTER_AUTH_URL",
         "CORS_ORIGINS",
         "EXPOSE_TESTING_API",
         "REDIS_URL",
         "RESEND_API_KEY",
         "RESEND_FROM_EMAIL",
         "SENTRY_AUTH_TOKEN",
-        "SENTRY_ORG",
-        "SENTRY_OTLP_TRACES_URL",
-        "SENTRY_PROJECT",
-        "SENTRY_PUBLIC_KEY",
-        "SENTRY_VERCEL_LOG_DRAIN_URL",
         "SPACE_ACCESS_SECRET",
-        "STRIPE_PRO_PRICE_ID",
-        "STRIPE_SECRET_KEY",
-        "STRIPE_WEBHOOK_SECRET",
         "TRUSTED_ORIGINS",
-        "WEB_APP_URL"
+        "WEB_APP_URL",
+        "NEXT_PUBLIC_DISABLE_SENTRY"
       ]
     },
     "lint": {
@@ -50,12 +42,10 @@
         "SPACE_ACCESS_SECRET",
         "TRUSTED_ORIGINS",
         "WEB_APP_URL",
-        "STRIPE_SECRET_KEY",
-        "STRIPE_WEBHOOK_SECRET",
-        "STRIPE_PRO_PRICE_ID",
         "RESEND_API_KEY",
         "RESEND_FROM_EMAIL",
-        "REDIS_URL"
+        "REDIS_URL",
+        "NEXT_PUBLIC_DISABLE_SENTRY"
       ]
     },
     "dev:ci": {
@@ -69,12 +59,10 @@
         "SPACE_ACCESS_SECRET",
         "TRUSTED_ORIGINS",
         "WEB_APP_URL",
-        "STRIPE_SECRET_KEY",
-        "STRIPE_WEBHOOK_SECRET",
-        "STRIPE_PRO_PRICE_ID",
         "RESEND_API_KEY",
         "RESEND_FROM_EMAIL",
-        "REDIS_URL"
+        "REDIS_URL",
+        "NEXT_PUBLIC_DISABLE_SENTRY"
       ]
     },
     "start": {
@@ -87,12 +75,10 @@
         "SPACE_ACCESS_SECRET",
         "TRUSTED_ORIGINS",
         "WEB_APP_URL",
-        "STRIPE_SECRET_KEY",
-        "STRIPE_WEBHOOK_SECRET",
-        "STRIPE_PRO_PRICE_ID",
         "RESEND_API_KEY",
         "RESEND_FROM_EMAIL",
-        "REDIS_URL"
+        "REDIS_URL",
+        "NEXT_PUBLIC_DISABLE_SENTRY"
       ]
     },
     "clean": {
@@ -105,7 +91,8 @@
       "cache": false
     },
     "db:seed": {
-      "cache": false
+      "cache": false,
+      "env": ["REDIS_URL"]
     },
     "test": {
       "dependsOn": ["^build", "db:generate"],
@@ -118,12 +105,10 @@
         "SPACE_ACCESS_SECRET",
         "TRUSTED_ORIGINS",
         "WEB_APP_URL",
-        "STRIPE_SECRET_KEY",
-        "STRIPE_WEBHOOK_SECRET",
-        "STRIPE_PRO_PRICE_ID",
         "RESEND_API_KEY",
         "RESEND_FROM_EMAIL",
-        "REDIS_URL"
+        "REDIS_URL",
+        "NEXT_PUBLIC_DISABLE_SENTRY"
       ]
     },
     "test:watch": {

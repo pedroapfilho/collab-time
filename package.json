@@ -1,6 +1,12 @@
 {
   "name": "collabtime",
   "private": true,
+  "homepage": "https://www.collabtime.io",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/unlockers-io/collabtime-monorepo.git"
+  },
   "type": "module",
   "scripts": {
     "start": "turbo run start",

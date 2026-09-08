@@ -1,0 +1,16 @@
+name: Bug report
+description: Report a reproducible problem with Collabtime.
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Include expected behavior and steps to reproduce. Do not include private workspace data.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Browser, operating system, and timezone
+    validations:
+      required: true

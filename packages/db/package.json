@@ -1,5 +1,6 @@
 {
   "name": "@repo/db",
+  "license": "MIT",
   "files": [
     "dist/**",
     "src/**",
@@ -31,6 +32,7 @@
     "@prisma/client": "^7.10.0",
     "better-auth": "^1.7.2",
     "dotenv": "^17.4.2",
+    "ioredis": "^6.0.0",
     "pg": "^8.23.0"
   },
   "devDependencies": {

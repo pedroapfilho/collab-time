@@ -2,6 +2,7 @@
   "name": "@repo/web",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "portless run --name collabtime.web next dev --turbopack",

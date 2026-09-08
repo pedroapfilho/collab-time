@@ -70,3 +70,6 @@ logs/
 # claude code session-local state (skills/ stays tracked)
 .claude/scheduled_tasks.lock
 .claude/projects/
+
+.context/
+.agents/
