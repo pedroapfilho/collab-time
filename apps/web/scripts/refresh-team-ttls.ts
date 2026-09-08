@@ -35,6 +35,7 @@ const main = async () => {
         }
         shortest = Math.min(shortest, ttl);
         if (!dryRun) {
+          // oxlint-disable-next-line react-doctor/async-await-in-loop -- bound maintenance writes to one in flight against the live Redis instance.
           await redis.expire(key, TEAM_ACTIVE_TTL_SECONDS);
         }
         refreshed += 1;
