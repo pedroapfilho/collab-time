@@ -2,21 +2,21 @@ import { Section } from "./section";
 
 const STEPS = [
   {
-    body: "One click creates a workspace with you on the timeline. Nothing to configure first",
+    body: "One click creates a workspace with you on the timeline. Nothing to configure first.",
     title: "Create a workspace",
   },
   {
-    body: "Invite them by email, send the link, or paste a CSV to add everyone at once",
+    body: "Invite them by email, send the link, or paste a CSV to add everyone at once.",
     title: "Add your team",
   },
   {
-    body: "Select the people you need and read the shaded window where they all overlap",
+    body: "Select the people you need and read the shaded window where they all overlap.",
     title: "Find the hour",
   },
 ];
 
 const HowItWorks = () => (
-  <Section className="border-t border-border">
+  <Section className="border-t border-border" id="how-it-works">
     <div className="flex flex-col gap-12 sm:gap-16">
       <h2 className="max-w-[24ch] font-display text-4xl font-semibold tracking-[-0.04em] text-balance sm:text-5xl">
         Three steps to a workable meeting time
@@ -34,4 +34,4 @@ const HowItWorks = () => (
   </Section>
 );
 
-export { HowItWorks };
+export { HowItWorks, STEPS };

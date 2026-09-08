@@ -36,7 +36,7 @@ const Hero = () => (
         </div>
       </div>
 
-      <div className="time-rail w-full">
+      <div className="w-full">
         <ProductPreview />
       </div>
     </div>

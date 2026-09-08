@@ -14,7 +14,7 @@ type MailerConfig = {
   from?: string;
 };
 
-const DEFAULT_FROM = "Collab Time <noreply@email.collabtime.io>";
+const DEFAULT_FROM = "Collabtime <noreply@email.collabtime.io>";
 
 type WelcomePayload = {
   userEmail: string;
@@ -69,7 +69,7 @@ const buildEmail = (email: TransactionalEmail): EmailBuild => {
   switch (email.type) {
     case "change-email-confirmation": {
       return {
-        subject: "Confirm change of your Collab Time account email",
+        subject: "Confirm change of your Collabtime account email",
         template: React.createElement(ChangeEmail, {
           changeUrl: email.changeUrl,
           currentEmail: email.currentEmail,
@@ -81,7 +81,7 @@ const buildEmail = (email: TransactionalEmail): EmailBuild => {
     }
     case "invitation": {
       return {
-        subject: `${email.inviterName} invited you to join ${email.teamName} on Collab Time`,
+        subject: `${email.inviterName} invited you to join ${email.teamName} on Collabtime`,
         template: React.createElement(InvitationEmail, {
           inviterName: email.inviterName,
           recipientEmail: email.recipientEmail,
@@ -93,7 +93,7 @@ const buildEmail = (email: TransactionalEmail): EmailBuild => {
     }
     case "password-reset": {
       return {
-        subject: "Reset your Collab Time password",
+        subject: "Reset your Collabtime password",
         template: React.createElement(PasswordResetEmail, {
           browserInfo: email.browserInfo,
           ipAddress: email.ipAddress,
@@ -106,7 +106,7 @@ const buildEmail = (email: TransactionalEmail): EmailBuild => {
     }
     case "sign-up-attempt": {
       return {
-        subject: "Sign-up attempt with your Collab Time account",
+        subject: "Sign-up attempt with your Collabtime account",
         template: React.createElement(SignUpAttemptEmail, {
           resetPasswordUrl: email.resetPasswordUrl,
           signInUrl: email.signInUrl,
@@ -120,7 +120,7 @@ const buildEmail = (email: TransactionalEmail): EmailBuild => {
       const greetingName =
         email.username !== undefined && email.username !== "" ? `, ${email.username}` : "";
       return {
-        subject: `Welcome to Collab Time${greetingName}! Please verify your email`,
+        subject: `Welcome to Collabtime${greetingName}! Please verify your email`,
         template: React.createElement(WelcomeEmail, {
           userEmail: email.userEmail,
           username: email.username,

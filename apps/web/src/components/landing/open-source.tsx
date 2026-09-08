@@ -8,9 +8,14 @@ const STACK = ["Next.js", "React", "Prisma", "Better Auth", "Tailwind CSS"];
 const OpenSource = () => (
   <Section className="border-t border-border">
     <div className="grid gap-8 lg:grid-cols-[0.7fr_1.3fr] lg:gap-20">
-      <p className="text-base text-muted-foreground sm:text-sm">
-        Open source, and built on tools you already know.
-      </p>
+      <div>
+        <h2 className="font-display text-4xl font-semibold tracking-[-0.04em] sm:text-5xl">
+          Open source
+        </h2>
+        <p className="mt-6 text-base text-muted-foreground sm:text-sm">
+          Open source, and built on tools you already know.
+        </p>
+      </div>
 
       <div className="flex flex-col items-start gap-8 border-t border-border pt-6">
         <ul className="flex flex-wrap items-center gap-x-8 gap-y-3">

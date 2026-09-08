@@ -38,8 +38,8 @@ const manrope = Manrope({
 
 export const viewport: Viewport = {
   themeColor: [
-    { color: "oklch(1 0 0)", media: "(prefers-color-scheme: light)" },
-    { color: "oklch(0.145 0 0)", media: "(prefers-color-scheme: dark)" },
+    { color: "#ffffff", media: "(prefers-color-scheme: light)" },
+    { color: "#0a0a0a", media: "(prefers-color-scheme: dark)" },
   ],
 };
 
@@ -104,9 +104,7 @@ const RootLayout = ({
           Skip to content
         </a>
         <Providers>
-          <div className="isolate flex flex-1 flex-col" id="main">
-            {children}
-          </div>
+          <div className="isolate flex flex-1 flex-col">{children}</div>
           <footer className="border-t border-border px-4 py-6 text-sm text-muted-foreground sm:px-6 lg:px-8 xl:px-12">
             <div className="mx-auto flex w-full max-w-450 items-center justify-between gap-3">
               <span>
@@ -114,7 +112,7 @@ const RootLayout = ({
                 <Suspense fallback={null}>
                   <CopyrightYear />
                 </Suspense>{" "}
-                Collab Time. All rights reserved.
+                Collabtime · MIT licensed
               </span>
               <a
                 aria-label="View on GitHub"

@@ -34,7 +34,7 @@ const tagSchema = z.object({
 const emailConfigSchema = z.object({
   bcc: recipientSchema.optional(),
   cc: recipientSchema.optional(),
-  from: senderAddressSchema.default("Collab Time <noreply@email.collabtime.io>"),
+  from: senderAddressSchema.default("Collabtime <noreply@email.collabtime.io>"),
   replyTo: senderAddressSchema.optional(),
   subject: z.string(),
   tags: z

@@ -1,9 +1,11 @@
 import { Skeleton } from "@repo/ui/components/skeleton";
 import { dehydrate } from "@tanstack/react-query";
+import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { LandingPage } from "@/components/landing";
 import { getSession } from "@/lib/auth-server";
+import { APP_DESCRIPTION_SHORT, APP_NAME, APP_TITLE } from "@/lib/constants";
 import { getMyTeams, getPendingInvitations } from "@/lib/home-data";
 import { log } from "@/lib/observability";
 import { createQueryClient } from "@/lib/query-client";
@@ -12,6 +14,19 @@ import { QueryProvider } from "@/providers/query-provider";
 
 import { HomeShell } from "./home-client";
 import { HomeLists } from "./home-client/lists";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+  openGraph: {
+    description: APP_DESCRIPTION_SHORT,
+    images: [{ alt: APP_TITLE, height: 630, url: "/og", width: 1200 }],
+    locale: "en_US",
+    siteName: APP_NAME,
+    title: APP_TITLE,
+    type: "website",
+    url: "/",
+  },
+};
 
 type HomeDataProps = {
   email: string;
@@ -88,29 +103,17 @@ const HomeContent = async () => {
 };
 
 const HomeSkeleton = () => (
-  <div aria-busy="true" className="flex flex-1 flex-col">
-    <div className="mx-auto flex w-full max-w-450 items-center justify-between px-4 py-6 sm:px-6 lg:px-8 xl:px-12">
-      <div className="flex items-center gap-3">
-        <Skeleton className="size-3.5 rounded-none" />
-        <Skeleton className="h-5 w-24 rounded-none" />
-      </div>
-      <div className="flex items-center gap-2">
-        <Skeleton className="size-9" />
-        <Skeleton className="size-9" />
-      </div>
+  <div
+    aria-busy="true"
+    className="mx-auto flex w-full max-w-450 flex-1 flex-col gap-12 px-4 py-6 sm:px-6 lg:px-8 xl:px-12"
+  >
+    <div className="flex items-center justify-between">
+      <Skeleton className="h-6 w-32" />
+      <Skeleton className="size-9" />
     </div>
-    <main className="mx-auto flex w-full max-w-450 flex-1 flex-col gap-14 px-4 py-12 sm:px-6 sm:py-20 lg:px-8 xl:px-12">
-      <div className="grid items-end gap-8 border-b border-border pb-10 sm:grid-cols-[1fr_auto]">
-        <div className="flex flex-col gap-3">
-          <Skeleton className="h-12 w-full max-w-xl rounded-none sm:h-17" />
-          <Skeleton className="h-5 w-full max-w-lg rounded-none" />
-        </div>
-        <Skeleton className="h-12 w-full rounded-none sm:w-56" />
-      </div>
-      <div className="flex w-full flex-col">
-        <Skeleton className="h-3.5 w-36 rounded-none" />
-        <div className="mt-3 min-h-24 border-y border-border" />
-      </div>
+    <main className="flex flex-col gap-4 py-12" id="main">
+      <Skeleton className="h-10 w-full max-w-lg" />
+      <Skeleton className="h-5 w-full max-w-sm" />
     </main>
   </div>
 );

@@ -20,7 +20,7 @@ const SignUpAttemptEmail = ({
   username,
 }: SignUpAttemptEmailProps) => {
   return (
-    <BaseLayout preview="A sign-up attempt was made with your Collab Time account email">
+    <BaseLayout preview="A sign-up attempt was made with your Collabtime account email">
       <Heading className="mt-0 mb-4 text-2xl font-semibold tracking-tight text-balance break-words text-foreground">
         Did you try to sign up?
       </Heading>
@@ -30,7 +30,7 @@ const SignUpAttemptEmail = ({
       </Text>
 
       <Text className="m-0 mb-2 text-base text-pretty break-words text-muted-foreground">
-        Someone just tried to create a new Collab Time account using your email (
+        Someone just tried to create a new Collabtime account using your email (
         <strong>{userEmail}</strong>). You already have an account with us, so we didn&apos;t create
         a new one.
       </Text>
@@ -63,7 +63,7 @@ const SignUpAttemptEmail = ({
         </Text>
         <ul className="m-0 list-inside list-disc text-base text-muted-foreground">
           <li className="py-1">Confirm your email account is secure</li>
-          <li className="py-1">Enable two-factor authentication on Collab Time</li>
+          <li className="py-1">Enable two-factor authentication on Collabtime</li>
           <li className="py-1">
             <Link className="text-foreground underline" href="mailto:security@collabtime.io">
               Let our security team know

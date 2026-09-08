@@ -1,124 +1,123 @@
 import { ImageResponse } from "next/og";
 
 import { APP_NAME, APP_TAGLINE } from "@/lib/constants";
+import { log } from "@/lib/observability";
 
-const loadGoogleFont = async (font: string, weight: number, text: string) => {
-  const url = `https://fonts.googleapis.com/css2?family=${font}:wght@${weight}&text=${encodeURIComponent(text)}`;
-  const cssResponse = await fetch(url, { next: { revalidate: 86_400 } });
-  if (!cssResponse.ok) {
-    throw new Error(`font stylesheet responded ${cssResponse.status}`);
-  }
-  const css = await cssResponse.text();
-  const fontUrl = /src: url\((?<url>.+)\) format\('(?:opentype|truetype)'\)/v.exec(css)?.groups
-    ?.url;
-
-  if (fontUrl !== undefined && fontUrl !== "") {
-    const response = await fetch(fontUrl, { next: { revalidate: 86_400 } });
-    if (response.status === 200) {
-      return response.arrayBuffer();
+const loadFont = async (): Promise<ArrayBuffer | null> => {
+  try {
+    const text = encodeURIComponent(`${APP_NAME}${APP_TAGLINE}`);
+    const signal = AbortSignal.timeout(3000);
+    const cssResponse = await fetch(
+      `https://fonts.googleapis.com/css2?family=Manrope:wght@600&text=${text}`,
+      { next: { revalidate: 86_400 }, signal },
+    );
+    if (!cssResponse.ok) {
+      throw new Error("Font stylesheet unavailable");
     }
+    const css = await cssResponse.text();
+    const url = /src: url\((?<url>.+)\) format\('(?:opentype|truetype)'\)/v.exec(css)?.groups?.url;
+    if (url === undefined || url === "") {
+      throw new Error("Font URL unavailable");
+    }
+    const response = await fetch(url, { next: { revalidate: 86_400 }, signal });
+    if (!response.ok) {
+      throw new Error("Font data unavailable");
+    }
+    return await response.arrayBuffer();
+  } catch (error) {
+    log.warn({ error, message: "Using default OG font", route: "/og" });
+    return null;
   }
-
-  throw new Error("failed to load font data");
 };
 
+const ROWS = [
+  { label: "Los Angeles", start: 220, width: 420 },
+  { label: "New York", start: 160, width: 420 },
+  { label: "Lisbon", start: 80, width: 420 },
+  { label: "Berlin", start: 40, width: 420 },
+];
+
 const GET = async () => {
-  const title = APP_NAME;
-  const subtitle = APP_TAGLINE;
-
-  const results = await Promise.allSettled([
-    loadGoogleFont("Geist+Mono", 700, title),
-    loadGoogleFont("Geist+Mono", 400, subtitle),
-  ]);
-
-  const fontBold = results[0].status === "fulfilled" ? results[0].value : null;
-  const fontRegular = results[1].status === "fulfilled" ? results[1].value : null;
-
-  if (!fontBold || !fontRegular) {
-    throw new Error("Failed to load fonts");
-  }
-
+  const font = await loadFont();
   return new ImageResponse(
     <div
       style={{
-        alignItems: "center",
         backgroundColor: "#0a0a0a",
+        color: "#fafafa",
         display: "flex",
         flexDirection: "column",
-        fontFamily: "Geist Mono",
         height: "100%",
-        justifyContent: "center",
+        padding: 64,
         width: "100%",
       }}
     >
       <div
         style={{
-          alignItems: "center",
-          backgroundColor: "#fafafa",
-          borderRadius: 24,
           display: "flex",
-          height: 96,
-          justifyContent: "center",
-          marginBottom: 32,
-          width: 96,
-        }}
-      >
-        <svg
-          fill="none"
-          height="48"
-          stroke="#0a0a0a"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="1.5"
-          viewBox="0 0 24 24"
-          width="48"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
-          <path d="M2 12h20" />
-        </svg>
-      </div>
-
-      <div
-        style={{
-          color: "#fafafa",
-          fontFamily: "Geist Mono Bold",
+          fontFamily: font ? "Manrope" : "sans-serif",
           fontSize: 64,
-          letterSpacing: "-0.025em",
-          marginBottom: 16,
+          fontWeight: 600,
+          letterSpacing: "-0.03em",
+          lineHeight: 1.1,
+          maxWidth: 900,
         }}
       >
-        {title}
+        {APP_TAGLINE}
       </div>
-
+      <div style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 44 }}>
+        {ROWS.map(({ label, start, width }) => (
+          <div key={label} style={{ alignItems: "center", display: "flex", gap: 24 }}>
+            <span style={{ color: "#a3a3a3", fontSize: 20, width: 160 }}>{label}</span>
+            <div
+              style={{
+                backgroundColor: "#171717",
+                display: "flex",
+                height: 28,
+                position: "relative",
+                width: 850,
+              }}
+            >
+              <div
+                style={{
+                  backgroundColor: "#737373",
+                  height: 28,
+                  left: start,
+                  position: "absolute",
+                  width,
+                }}
+              />
+              <div
+                style={{
+                  backgroundColor: "#fafafa",
+                  height: 28,
+                  left: 220,
+                  position: "absolute",
+                  width: 240,
+                }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
       <div
         style={{
-          color: "#a3a3a3",
-          fontFamily: "Geist Mono",
-          fontSize: 24,
-          maxWidth: 600,
-          textAlign: "center",
+          alignItems: "center",
+          display: "flex",
+          justifyContent: "space-between",
+          marginTop: "auto",
         }}
       >
-        {subtitle}
+        <span
+          style={{ fontFamily: font ? "Manrope" : "sans-serif", fontSize: 30, fontWeight: 600 }}
+        >
+          {APP_NAME}
+        </span>
+        <span style={{ color: "#a3a3a3", fontSize: 20 }}>Free and open source · collabtime.io</span>
       </div>
     </div>,
     {
-      fonts: [
-        {
-          data: fontBold,
-          name: "Geist Mono Bold",
-          style: "normal",
-          weight: 700,
-        },
-        {
-          data: fontRegular,
-          name: "Geist Mono",
-          style: "normal",
-          weight: 400,
-        },
-      ],
+      fonts: font ? [{ data: font, name: "Manrope", style: "normal", weight: 600 }] : undefined,
+      headers: { "Cache-Control": "public, max-age=86400, s-maxage=86400" },
       height: 630,
       width: 1200,
     },

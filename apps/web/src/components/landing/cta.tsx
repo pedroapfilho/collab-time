@@ -20,7 +20,7 @@ const Cta = () => (
       </div>
 
       <Link
-        className={cn(buttonVariants({ size: "lg", variant: "outline" }), LANDING_CTA_SIZE)}
+        className={cn(buttonVariants({ size: "lg", variant: "default" }), LANDING_CTA_SIZE)}
         href="/signup"
       >
         Create a workspace

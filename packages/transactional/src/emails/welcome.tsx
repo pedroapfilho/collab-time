@@ -13,9 +13,9 @@ type WelcomeEmailProps = {
 
 const WelcomeEmail = ({ userEmail, username, verificationUrl }: WelcomeEmailProps) => {
   return (
-    <BaseLayout preview="Welcome to Collab Time. Verify your email to get started.">
+    <BaseLayout preview="Welcome to Collabtime. Verify your email to get started.">
       <Heading className="mt-0 mb-4 text-2xl font-semibold tracking-tight text-balance break-words text-foreground">
-        Welcome to Collab Time.
+        Welcome to Collabtime.
       </Heading>
 
       <Text className="m-0 mb-6 text-base text-pretty break-words text-muted-foreground">
@@ -31,7 +31,7 @@ const WelcomeEmail = ({ userEmail, username, verificationUrl }: WelcomeEmailProp
       <Divider />
 
       <Text className="m-0 mb-4 text-sm text-muted-foreground">
-        If you didn&apos;t create an account with Collab Time, you can safely ignore this email. The
+        If you didn&apos;t create an account with Collabtime, you can safely ignore this email. The
         verification link expires in 24 hours.
       </Text>
 

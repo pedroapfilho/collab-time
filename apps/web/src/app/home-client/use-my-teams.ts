@@ -37,7 +37,11 @@ const useMyTeams = () => {
   const queryClient = useQueryClient();
   const [isArchivePending, startArchiveTransition] = useTransition();
 
-  const { data: myTeams = [], isLoading: isLoadingTeams } = useQuery({
+  const {
+    data: myTeams = [],
+    isLoading: isLoadingTeams,
+    isSuccess: hasLoadedTeams,
+  } = useQuery({
     queryFn: async () => {
       const response = await fetch("/api/teams");
       if (!response.ok) {
@@ -82,6 +86,7 @@ const useMyTeams = () => {
 
   return {
     handleToggleArchive,
+    hasLoadedTeams,
     isArchivePending,
     isLoadingTeams,
     myTeams: optimisticTeams,
