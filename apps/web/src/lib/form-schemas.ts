@@ -10,7 +10,7 @@ const signupSchema = z.object({
   name: z.string().min(1, "Name is required").max(100, "Name is too long"),
   password: z
     .string()
-    .min(8, "Password must be at least 8 characters")
+    .min(12, "Password must be at least 12 characters")
     .max(128, "Password is too long"),
 });
 
@@ -23,7 +23,7 @@ const resetPasswordSchema = z
     confirmPassword: z.string().min(1, "Please confirm your password"),
     password: z
       .string()
-      .min(8, "Password must be at least 8 characters")
+      .min(12, "Password must be at least 12 characters")
       .max(128, "Password is too long"),
   })
   .refine((data) => data.password === data.confirmPassword, {

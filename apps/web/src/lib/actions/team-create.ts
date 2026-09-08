@@ -11,6 +11,7 @@ import { applyTeamContents, newTeamMember } from "../team-store";
 import { createTeamAction } from "./team-create-core";
 
 const createTeam = createTeamAction({
+  countAdminTeams: (userId) => prisma.membership.count({ where: { role: "ADMIN", userId } }),
   createId: uuidv4,
   createMember: newTeamMember,
   createTeamRecords: async (userId, teamId) => {

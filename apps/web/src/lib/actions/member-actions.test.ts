@@ -388,3 +388,38 @@ describe("reorderMembers", () => {
     expect(saved.members[1].id).toBe(VALID_UUID_2);
   });
 });
+
+describe("member limits", () => {
+  it("allows the 200th member and rejects the next", async () => {
+    seedTeam(
+      createTestTeamRecord({
+        members: Array.from({ length: 199 }, (_, index) =>
+          createTestMember({ id: `member-${index}` }),
+        ),
+      }),
+    );
+    const result1 = await addMember(VALID_UUID, validMemberInput);
+    expect(result1.success).toBe(true);
+    const result2 = await addMember(VALID_UUID, validMemberInput);
+    expect(result2.success).toBe(false);
+    expect(persistedTeam().members).toHaveLength(200);
+  });
+
+  it("rejects an oversized total import without partial writes", async () => {
+    seedTeam(
+      createTestTeamRecord({
+        members: Array.from({ length: 199 }, (_, index) =>
+          createTestMember({ id: `member-${index}` }),
+        ),
+      }),
+    );
+    expect(await importMembers(VALID_UUID, [validMemberInput, validMemberInput])).toEqual({
+      error: "A workspace can have up to 200 members",
+      success: false,
+    });
+    expect(persistedTeam().members).toHaveLength(199);
+    const result3 = await importMembers(VALID_UUID, [validMemberInput]);
+    expect(result3.success).toBe(true);
+    expect(persistedTeam().members).toHaveLength(200);
+  });
+});

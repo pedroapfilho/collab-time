@@ -1,5 +1,6 @@
 import type { Team, TeamGroup } from "@/types";
 
+import { MAX_GROUPS_PER_TEAM } from "../limits";
 import { TeamGroupInputSchema, TeamGroupUpdateSchema } from "../validation";
 
 import { checkUuid, sanitizeTeam } from "./helpers";
@@ -19,6 +20,9 @@ const createGroupActions = (deps: GroupActionDeps) => {
     const mutationResult = await deps.mutateTeam({
       errorContext: "create group",
       mutate: (team, parsed) => {
+        if (team.groups.length >= MAX_GROUPS_PER_TEAM) {
+          return { error: `A workspace can have up to ${MAX_GROUPS_PER_TEAM} groups`, ok: false };
+        }
         const newGroup: TeamGroup = {
           id: deps.createId(),
           name: parsed.name,

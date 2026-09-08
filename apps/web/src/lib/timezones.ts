@@ -2,23 +2,45 @@ const COMMON_TIMEZONES = [
   "Pacific/Honolulu",
   "America/Anchorage",
   "America/Los_Angeles",
+  "America/Vancouver",
   "America/Denver",
   "America/Chicago",
+  "America/Mexico_City",
   "America/New_York",
+  "America/Toronto",
+  "America/Bogota",
   "America/Sao_Paulo",
+  "America/Argentina/Buenos_Aires",
   "Atlantic/Azores",
   "Europe/London",
+  "Europe/Lisbon",
   "Europe/Paris",
   "Europe/Berlin",
+  "Europe/Madrid",
+  "Europe/Amsterdam",
+  "Europe/Warsaw",
+  "Africa/Lagos",
   "Europe/Athens",
+  "Africa/Johannesburg",
+  "Africa/Cairo",
   "Europe/Moscow",
+  "Europe/Istanbul",
   "Asia/Dubai",
+  "Asia/Karachi",
   "Asia/Kolkata",
   "Asia/Dhaka",
   "Asia/Bangkok",
+  "Asia/Jakarta",
   "Asia/Shanghai",
+  "Asia/Singapore",
+  "Asia/Hong_Kong",
+  "Asia/Manila",
+  "Australia/Perth",
   "Asia/Tokyo",
+  "Asia/Seoul",
   "Australia/Sydney",
+  "Australia/Melbourne",
+  "Australia/Brisbane",
   "Pacific/Auckland",
 ] as const;
 
@@ -64,14 +86,6 @@ const formatTimezoneLabel = (timezone: string, includeCurrentTime = false): stri
   }
 
   return base;
-};
-
-const getUserTimezone = (): CommonTimezone => {
-  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  return (
-    COMMON_TIMEZONES.find((commonTimezone) => commonTimezone === timezone) ??
-    DEFAULT_MEMBER_TIMEZONE
-  );
 };
 
 const convertHourToTimezone = (hour: number, fromTimezone: string, toTimezone: string): number => {
@@ -232,6 +246,15 @@ const fuzzyMatchTimezone = (input: string): CommonTimezone | null => {
   }
 
   return best;
+};
+
+const getUserTimezone = (): CommonTimezone => {
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return (
+    COMMON_TIMEZONES.find((commonTimezone) => commonTimezone === timezone) ??
+    fuzzyMatchTimezone(timezone) ??
+    DEFAULT_MEMBER_TIMEZONE
+  );
 };
 
 export {
