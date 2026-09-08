@@ -10,7 +10,6 @@ import {
 } from "@repo/ui/components/tooltip";
 import { cn } from "@repo/ui/lib/utils";
 import { Circle, Clock, Sunrise, Users } from "lucide-react";
-import { useMemo } from "react";
 
 import {
   SectionCard,
@@ -19,6 +18,7 @@ import {
   SectionCardTitle,
 } from "@/components/section-card";
 import { HOURS_IN_DAY, useClientValue } from "@/components/timezone-visualizer/helpers";
+import { getHourFormatter } from "@/lib/hour-formatter";
 import { getUserTimezone, isCurrentlyWorking, convertHourToTimezone } from "@/lib/timezones";
 import { useHalfMinuteTick } from "@/lib/use-tick";
 import type { TeamGroup, TeamMember } from "@/types";
@@ -118,21 +118,13 @@ const StatusBadge = ({ children, groupName, tone }: StatusBadgeProps) => {
 const TeamInsights = ({ groups = EMPTY_GROUPS, members }: TeamInsightsProps) => {
   const viewerTimezone = useClientValue(() => getUserTimezone(), "");
   useHalfMinuteTick();
-  const hourFormatter = useMemo(
-    () =>
-      new Intl.DateTimeFormat("en-US", {
-        hour: "numeric",
-        hour12: false,
-        timeZone: viewerTimezone || "UTC",
-      }),
-    [viewerTimezone],
-  );
 
   if (members.length === 0 || !viewerTimezone) {
     return null;
   }
 
   const now = new Date();
+  const hourFormatter = getHourFormatter(viewerTimezone);
   const hourPart = hourFormatter.formatToParts(now).find((p) => p.type === "hour");
   const currentHourInViewer = hourPart ? Math.trunc(Number(hourPart.value)) : 0;
   const hoursUntil = (hourInViewer: number) =>

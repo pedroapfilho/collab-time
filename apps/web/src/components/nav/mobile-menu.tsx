@@ -1,6 +1,7 @@
 "use client";
 
-import { Button, buttonVariants } from "@repo/ui/components/button";
+import { Button } from "@repo/ui/components/button";
+import { buttonVariants } from "@repo/ui/components/button-variants";
 import { Check, Copy, LogIn, LogOut, Settings, Shield, Trash2, User } from "lucide-react";
 import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import Link from "next/link";

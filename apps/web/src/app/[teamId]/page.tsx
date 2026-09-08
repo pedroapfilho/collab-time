@@ -1,14 +1,13 @@
 import { prisma } from "@repo/db";
 import { dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 
 import { getPublicTeam } from "@/lib/actions/team-read";
 import { getSession } from "@/lib/auth-server";
 import { createQueryClient } from "@/lib/query-client";
 import { queryKeys } from "@/lib/query-keys";
-import { SPACE_ACCESS_COOKIE_PREFIX, verifySpaceAccessToken } from "@/lib/space-access";
+import { canAccessSpace } from "@/lib/space-visibility";
 import { getTeamName } from "@/lib/team-meta";
 import { QueryProvider } from "@/providers/query-provider";
 import { isTeamRole } from "@/types";
@@ -79,27 +78,10 @@ const TeamPage = async ({ params }: TeamPageProps) => {
     notFound();
   }
 
-  if (space.isPrivate) {
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get(`${SPACE_ACCESS_COOKIE_PREFIX}${space.id}`)?.value;
-    const hasGuestAccess =
-      accessToken !== undefined && accessToken !== ""
-        ? verifySpaceAccessToken(accessToken, space.id, space.accessPassword).valid
-        : false;
-
-    if (!hasGuestAccess) {
-      const membership = session
-        ? await prisma.membership.findUnique({
-            where: { userId_teamId: { teamId, userId: session.user.id } },
-          })
-        : null;
-
-      if (!membership) {
-        return (
-          <PrivateSpaceGate isAuthenticated={Boolean(session)} spaceId={space.id} teamId={teamId} />
-        );
-      }
-    }
+  if (!(await canAccessSpace(space, session?.user.id))) {
+    return (
+      <PrivateSpaceGate isAuthenticated={Boolean(session)} spaceId={space.id} teamId={teamId} />
+    );
   }
 
   const { isArchived, status: teamStatus } = session

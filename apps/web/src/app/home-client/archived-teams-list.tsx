@@ -38,6 +38,7 @@ const ArchivedTeamsList = ({
           className="flex w-full flex-col gap-3 border-t border-border pt-5"
           exit={{ opacity: 0 }}
           initial={{ opacity: 0 }}
+          layout
           transition={{
             delay: 0.4,
             duration: 0.15,
@@ -67,11 +68,12 @@ const ArchivedTeamsList = ({
           <AnimatePresence initial={false}>
             {showArchived && (
               <m.div
-                animate={{ height: "auto", opacity: 1 }}
+                animate={{ opacity: 1 }}
                 className="flex flex-col overflow-hidden"
-                exit={{ height: 0, opacity: 0 }}
-                initial={{ height: 0, opacity: 0 }}
+                exit={{ opacity: 0 }}
+                initial={{ opacity: 0 }}
                 key="archived-list"
+                layout
                 transition={{ duration: 0.2 }}
               >
                 <AnimatePresence mode="popLayout">

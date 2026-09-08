@@ -29,6 +29,8 @@ const COMMON_TIMEZONE_SET: ReadonlySet<string> = new Set(COMMON_TIMEZONES);
 
 type CommonTimezone = (typeof COMMON_TIMEZONES)[number];
 
+export type { CommonTimezone };
+
 const getTimezoneOffset = (timezone: string): number => {
   const now = new Date();
   const utcDate = new Date(now.toLocaleString("en-US", { timeZone: "UTC" }));

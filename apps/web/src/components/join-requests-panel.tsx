@@ -15,6 +15,7 @@ import {
   getPendingJoinRequests,
 } from "@/lib/actions/join-requests";
 import type { ActionResult } from "@/lib/actions/types";
+import { runWithCleanup } from "@/lib/run-with-cleanup";
 
 type JoinRequestsPanelProps = {
   teamId: string;
@@ -50,23 +51,28 @@ const JoinRequestRow = ({ onSettled, request }: JoinRequestRowProps) => {
     const failureMessage =
       next === "approve" ? "Failed to approve request" : "Failed to deny request";
 
-    try {
-      const result: ActionResult<unknown> =
-        next === "approve"
-          ? await approveJoinRequest(request.id)
-          : await denyJoinRequest(request.id);
+    await runWithCleanup(
+      async () => {
+        try {
+          const result: ActionResult<unknown> =
+            next === "approve"
+              ? await approveJoinRequest(request.id)
+              : await denyJoinRequest(request.id);
 
-      if (result.success) {
-        toast.success(successMessage);
-      } else {
-        toast.error(result.error);
-      }
-    } catch {
-      toast.error(failureMessage);
-    } finally {
-      setAction(null);
-      onSettled();
-    }
+          if (result.success) {
+            toast.success(successMessage);
+          } else {
+            toast.error(result.error);
+          }
+        } catch {
+          toast.error(failureMessage);
+        }
+      },
+      () => {
+        setAction(null);
+        onSettled();
+      },
+    );
   };
 
   const isBusy = action !== null;
