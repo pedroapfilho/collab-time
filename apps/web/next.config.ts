@@ -1,5 +1,5 @@
 import { applyPortlessUrls } from "@repo/portless-env";
-import { withSentryConfig } from "@sentry/nextjs";
+import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
 
 applyPortlessUrls({ WEB_APP_URL: ["collabtime.web"] });
