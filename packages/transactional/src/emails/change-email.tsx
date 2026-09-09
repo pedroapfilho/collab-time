@@ -14,13 +14,13 @@ type ChangeEmailProps = {
 
 const ChangeEmail = ({ changeUrl, currentEmail, newEmail, username }: ChangeEmailProps) => {
   return (
-    <BaseLayout preview="Confirm your new Collab Time account email address.">
+    <BaseLayout preview="Confirm your new Collabtime account email address.">
       <Heading className="mt-0 mb-4 text-2xl font-semibold tracking-tight text-balance break-words text-foreground">
         Confirm your new email
       </Heading>
 
       <Text className="m-0 mb-6 text-base text-pretty break-words text-muted-foreground">
-        You requested to change the email on your Collab Time account
+        You requested to change the email on your Collabtime account
         {username !== undefined && username !== "" ? ` (${username})` : ""} from{" "}
         <strong>{currentEmail}</strong> to <strong>{newEmail}</strong>. Confirm to complete the
         change.

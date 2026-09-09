@@ -7,9 +7,11 @@ import { cn } from "@repo/ui/lib/utils";
 import { LogIn, UserPlus } from "lucide-react";
 import Link from "next/link";
 
+import { AcceptWorkspaceInvitation } from "@/components/accept-workspace-invitation";
 import type { TeamStatus } from "@/types";
 
 type JoinPromptProps = {
+  invitationId?: string;
   isAuthenticated: boolean;
   isRequestingJoin: boolean;
   onRequestJoin: () => void;
@@ -18,6 +20,7 @@ type JoinPromptProps = {
 };
 
 const JoinPrompt = ({
+  invitationId,
   isAuthenticated,
   isRequestingJoin,
   onRequestJoin,
@@ -37,6 +40,10 @@ const JoinPrompt = ({
         </Link>
       </div>
     );
+  }
+
+  if (teamStatus === "INVITED" && invitationId !== undefined) {
+    return <AcceptWorkspaceInvitation invitationId={invitationId} />;
   }
 
   if (teamStatus === "PENDING") {

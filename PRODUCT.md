@@ -1,7 +1,5 @@
 # Product
 
-<!-- impeccable:product-schema 1 -->
-
 ## Platform
 
 web
@@ -35,14 +33,13 @@ The mechanism is the horizontal per-member day strip with a computed overlap: ev
 
 ## Brand Commitments
 
-- Name: **Collabtime** (UI sometimes renders "Collab Time"). Product copy and factual claims are binding; visual identity is explicitly NOT pinned (user confirmed 2026-09-01: only product truth is sacred — fonts, colors, layout, light/dark are all free per design direction).
+- Name: **Collabtime**. Product copy and factual claims are binding; visual identity is explicitly NOT pinned.
 - Open source is part of the identity (landing has an Open Source section; GitHub link in nav).
 
 ## Evidence on Hand
 
 - A real, working product demo: the landing page renders the actual `TimezoneVisualizer` against a static demo team (`apps/web/src/components/landing/demo-team.ts` — 5 members across LA / NY / Lisbon / Berlin / Singapore, picked so four of five share a real overlap window). Any mockup or marketing surface can truthfully show this data.
-- No testimonials, customer logos, benchmarks, or pricing exist. Do not fabricate any.
-- Seed data for local review: user `test@collabtime.dev`, team `test-team`.
+- No testimonials, customer logos, benchmarks, or pricing exist.
 
 ## Product Principles
 

@@ -1,6 +1,7 @@
 import type { requireAuth, requireTeamMember } from "@/lib/team-auth";
 import type { Team, TeamMember } from "@/types";
 
+import { MAX_MEMBERS_PER_TEAM } from "../limits";
 import { TeamMemberInputSchema, TeamMemberUpdateSchema } from "../validation";
 
 import { checkUuid, sanitizeTeam } from "./helpers";
@@ -23,6 +24,9 @@ const createMemberActions = (deps: MemberActionDeps) => {
     const mutationResult = await deps.mutateTeam({
       errorContext: "add member",
       mutate: (team, parsed) => {
+        if (team.members.length >= MAX_MEMBERS_PER_TEAM) {
+          return { error: `A workspace can have up to ${MAX_MEMBERS_PER_TEAM} members`, ok: false };
+        }
         const newMember: TeamMember = {
           ...parsed,
           id: deps.createId(),
@@ -116,6 +120,9 @@ const createMemberActions = (deps: MemberActionDeps) => {
     const mutationResult = await deps.mutateTeam({
       errorContext: "import members",
       mutate: (team, validated) => {
+        if (team.members.length + validated.length > MAX_MEMBERS_PER_TEAM) {
+          return { error: `A workspace can have up to ${MAX_MEMBERS_PER_TEAM} members`, ok: false };
+        }
         const startOrder = team.members.length;
         const ordered = validated.map((member, index) => ({
           ...member,

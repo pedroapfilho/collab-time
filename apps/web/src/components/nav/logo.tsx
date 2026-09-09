@@ -6,7 +6,7 @@ type NavLogoProps = {
 
 const Logo = ({ showTitle = true }: NavLogoProps) => (
   <Link
-    aria-label="Collab Time, homepage"
+    aria-label="Collabtime, homepage"
     className="flex items-center gap-3 text-foreground transition-opacity hover:opacity-70"
     href="/"
   >

@@ -13,7 +13,7 @@ type BaseLayoutProps = {
 
 const BaseLayout = ({
   children,
-  footerText = "You're receiving this email because you have an account with Collab Time.",
+  footerText = "You're receiving this email because you have an account with Collabtime.",
   preview,
   unsubscribeUrl,
 }: BaseLayoutProps) => {
@@ -48,7 +48,7 @@ const BaseLayout = ({
                   className="text-sm font-semibold text-foreground no-underline"
                   href="https://collabtime.io"
                 >
-                  Visit Collab Time
+                  Visit Collabtime
                 </Link>
                 {unsubscribeUrl !== undefined && unsubscribeUrl !== "" && (
                   <>
@@ -64,7 +64,7 @@ const BaseLayout = ({
               </Text>
 
               <Text className="m-0 text-xs text-muted-foreground">
-                © {copyrightYear} Collab Time. All rights reserved.
+                © {copyrightYear} Collabtime. All rights reserved.
               </Text>
             </Section>
           </Container>

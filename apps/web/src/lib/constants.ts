@@ -1,14 +1,13 @@
-const APP_NAME = "Collab Time";
+const APP_NAME = "Collabtime";
 
-const APP_TITLE = "Collab Time - Team Timezone Visualizer";
+const APP_TITLE = "Collabtime – Team Timezone Visualizer";
 
 const APP_DESCRIPTION =
-  "Visualize your team's working hours across timezones. Find the perfect moment to connect with distributed teams. No account required.";
+  "See every teammate's working hours on one timeline and find the overlap where a meeting actually works. Free and open source.";
 
-const APP_DESCRIPTION_SHORT =
-  "Visualize your team's working hours across timezones. Find the perfect moment to connect.";
+const APP_DESCRIPTION_SHORT = "Find the hour everyone is awake";
 
-const APP_TAGLINE = "Visualize your team's working hours across timezones";
+const APP_TAGLINE = "Find the hour everyone is awake";
 
 const APP_REPO_URL = "https://github.com/unlockers-io/collabtime-monorepo";
 

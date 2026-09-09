@@ -60,7 +60,7 @@ describe("validateEnv", () => {
   });
 
   it("accepts RESEND_FROM_EMAIL in 'Display Name <email>' format", () => {
-    vi.stubEnv("RESEND_FROM_EMAIL", "Collab Time <noreply@email.collabtime.io>");
+    vi.stubEnv("RESEND_FROM_EMAIL", "Collabtime <noreply@email.collabtime.io>");
 
     expect(() => validateEnv()).not.toThrow();
   });

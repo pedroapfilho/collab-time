@@ -29,7 +29,9 @@ const useInvitations = () => {
   const queryClient = useQueryClient();
   const [isInvitationPending, startInvitationTransition] = useTransition();
 
-  const { data: invitations = [] } = useQuery<Array<PendingInvitation>>({
+  const { data: invitations = [], isSuccess: hasLoadedInvitations } = useQuery<
+    Array<PendingInvitation>
+  >({
     queryFn: async () => {
       const response = await fetch("/api/invitations");
       if (!response.ok) {
@@ -90,6 +92,7 @@ const useInvitations = () => {
   return {
     handleAcceptInvitation,
     handleDeclineInvitation,
+    hasLoadedInvitations,
     invitations: optimisticInvitations,
     isInvitationPending,
   };

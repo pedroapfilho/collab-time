@@ -34,7 +34,7 @@ const FEATURES = [
 ];
 
 const Features = () => (
-  <Section className="border-t border-border">
+  <Section className="border-t border-border" id="features">
     <div className="grid gap-12 lg:grid-cols-[0.7fr_1.3fr] lg:gap-20">
       <div>
         <h2 className="max-w-[14ch] font-display text-4xl font-semibold tracking-[-0.04em] text-balance sm:text-5xl">

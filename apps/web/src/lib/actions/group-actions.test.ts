@@ -253,3 +253,20 @@ describe("reorderGroups", () => {
     expect(saved.groups[2]).toEqual(expect.objectContaining({ id: "g2", order: 2 }));
   });
 });
+
+describe("group limits", () => {
+  it("allows the 50th group and rejects the next", async () => {
+    seedTeam(
+      createTestTeamRecord({
+        groups: Array.from({ length: 49 }, (_, index) => createTestGroup({ id: `group-${index}` })),
+      }),
+    );
+    const result1 = await createGroup(VALID_UUID, { name: "Last group" });
+    expect(result1.success).toBe(true);
+    expect(await createGroup(VALID_UUID, { name: "Too many" })).toEqual({
+      error: "A workspace can have up to 50 groups",
+      success: false,
+    });
+    expect(persistedTeam().groups).toHaveLength(50);
+  });
+});

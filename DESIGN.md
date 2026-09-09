@@ -11,10 +11,6 @@ Focus Black is Collabtime’s visual system: a still, monochromatic workspace wh
 - Keep corners restrained. Small controls may use the shared radius; content regions stay square and flat.
 - Reserve chroma for destructive, warning, success, and informational feedback where color improves safety. Normal navigation and product state remain monochromatic.
 
-## Direction record
-
-- **FORM:** Depth-ranked black interface, fused from challenger `operate-c-cracktro-scroller-queue` in direction seed `ddb70053`.
-
 ## Light and dark
 
 - Theme values follow shadcn's canonical neutral semantic contract: background, foreground, card, popover, primary, secondary, muted, accent, destructive, border, input, ring, charts, and sidebar.

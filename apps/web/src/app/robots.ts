@@ -8,7 +8,15 @@ const robots = (): MetadataRoute.Robots => {
   return {
     rules: {
       allow: "/",
-      disallow: ["/api/", "/settings", "/login", "/signup", "/recover", "/reset-password"],
+      disallow: [
+        "/monitoring",
+        "/api/",
+        "/settings",
+        "/login",
+        "/signup",
+        "/recover",
+        "/reset-password",
+      ],
       userAgent: "*",
     },
     sitemap: `${baseUrl}/sitemap.xml`,

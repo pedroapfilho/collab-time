@@ -11,7 +11,7 @@ Collabtime is a team timezone visualizer. Distributed teams create spaces, add m
 - **Framework**: Next.js 16 App Router (Turbopack, React Compiler enabled)
 - **Language**: TypeScript strict, ESNext, Bundler module resolution
 - **UI**: React 19, Tailwind CSS v4, Base UI (`@base-ui/react`), Motion, Sonner, Lucide
-- **Fonts**: Inter as `--font-sans` (body / UI), Geist Mono as `--font-display` (headings, clock and hour numerals). Both loaded via `next/font` in `apps/web/src/app/layout.tsx`, registered in the `@theme inline` block of `packages/ui/src/styles/globals.css`
+- **Fonts**: Inter as `--font-sans` (body / UI), Manrope as `--font-display` (headings), Geist Mono as `--font-mono` (clock and hour numerals). All three loaded via `next/font` in `apps/web/src/app/layout.tsx`, registered in the `@theme inline` block of `packages/ui/src/styles/globals.css`
 - **Forms**: `@tanstack/react-form` + Zod 4 (NOT react-hook-form)
 - **Data**: TanStack Query with 20s polling for team sync
 - **Auth**: Better Auth (email/password)
@@ -61,7 +61,7 @@ pnpm db:seed              # Seed DB
 pnpm clean                # turbo clean + rm -rf node_modules
 
 # Single-workspace
-pnpm --filter web dev
+pnpm --filter @repo/web dev
 pnpm --filter @repo/ui build
 
 # Dead-code / health
@@ -150,20 +150,17 @@ Spaces link to teams via a unique `teamId` and support private access through `i
 
 - `test.yml`: `pnpm test`
 - `lint.yml`: `pnpm oxlint --format=github .`
-- `format.yml`: `pnpm run format:check`
-- `fallow.yml`: `pnpm fallow:dead`
 - `e2e.yml`: Playwright
 - `typecheck.yml`: `pnpm typecheck`
 - `secret-scan.yml`: gitleaks
 - `react-doctor.yml`: React Doctor scan
 - Workflows use `permissions: { contents: read }`, except `react-doctor.yml`, which also needs `issues`, `pull-requests` and `statuses` write to post its comment and commit status
-- Required workflows pin `actions/checkout@v6`; `react-doctor.yml` pins `actions/checkout@v5`
+
+- All workflows pin `actions/checkout` by SHA to v7.0.1.
 
 ## References
 
 - Conventions: [`docs/CONVENTIONS.md`](docs/CONVENTIONS.md)
-- Sibling repos (control plane): `~/dev/orchestrator` (standards.md + checks)
-- Template / source of truth for `saas` profile: `~/dev/acme-monorepo`
 - Better Auth docs: <https://better-auth.com>
 - Prisma 7: <https://www.prisma.io/docs>
 - oxlint: <https://oxc.rs>

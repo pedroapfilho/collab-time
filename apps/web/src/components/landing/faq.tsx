@@ -8,7 +8,7 @@ const QUESTIONS = [
   },
   {
     answer:
-      "Yes. Mark a workspace private and it sits behind a password, so only people you give it to can open the link.",
+      "Yes. Mark a workspace private and it sits behind a password, and members can sign in to access it.",
     question: "Can I keep a workspace private?",
   },
   {
@@ -23,7 +23,18 @@ const QUESTIONS = [
 ];
 
 const Faq = () => (
-  <Section className="border-t border-border">
+  <Section className="border-t border-border" id="faq">
+    <script type="application/ld+json">
+      {JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: QUESTIONS.map(({ answer, question }) => ({
+          "@type": "Question",
+          acceptedAnswer: { "@type": "Answer", text: answer },
+          name: question,
+        })),
+      }).replaceAll("<", String.raw`\u003c`)}
+    </script>
     <div className="grid gap-12 lg:grid-cols-[0.7fr_1.3fr] lg:gap-20">
       <h2 className="font-display text-4xl font-semibold tracking-[-0.04em] text-balance sm:text-5xl">
         Questions

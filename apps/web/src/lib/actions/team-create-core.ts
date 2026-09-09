@@ -1,6 +1,7 @@
 import type { requireAuth } from "@/lib/team-auth";
 import type { TeamMember, TeamRecord } from "@/types";
 
+import { MAX_TEAMS_PER_USER } from "../limits";
 import { TEAM_INITIAL_TTL_SECONDS } from "../redis";
 
 import type { ActionErrorEvent, ActionResult } from "./types";
@@ -10,6 +11,7 @@ type StoreTeamResult =
   | { ok: false; reason: "read-failed" | "rejected" | "unconfigured" | "write-failed" };
 
 type TeamCreateDeps = {
+  countAdminTeams: (userId: string) => Promise<number>;
   createId: () => string;
   createMember: (overrides: Partial<TeamMember>) => TeamMember;
   createTeamRecords: (userId: string, teamId: string) => Promise<void>;
@@ -24,6 +26,12 @@ const createTeamAction = (deps: TeamCreateDeps) => {
   return async (timezone: string): Promise<ActionResult<string>> => {
     try {
       const session = await deps.requireAuth();
+      if ((await deps.countAdminTeams(session.user.id)) >= MAX_TEAMS_PER_USER) {
+        return {
+          error: `You can administer up to ${MAX_TEAMS_PER_USER} workspaces`,
+          success: false,
+        };
+      }
       const teamId = deps.createId();
 
       await deps.createTeamRecords(session.user.id, teamId);

@@ -65,7 +65,7 @@ test.describe("Register", () => {
     await passwordInput.pressSequentially("short", { delay: 10 });
     await page.getByRole("button", { name: /create account/i }).click();
 
-    await expect(page.getByText(/at least 8 characters/i)).toBeVisible();
+    await expect(page.getByText(/at least 12 characters/i)).toBeVisible();
   });
 
   test("navigates to login page", async ({ page, signupPage }) => {

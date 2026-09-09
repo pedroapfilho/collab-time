@@ -38,7 +38,7 @@ const createAuth = (config: AuthConfig) => {
   const {
     allowedHosts,
     extraPlugins = [],
-    fromEmail = "Collab Time <noreply@email.collabtime.io>",
+    fromEmail = "Collabtime <noreply@email.collabtime.io>",
     onSessionCreated,
     onUserCreated,
     prisma,

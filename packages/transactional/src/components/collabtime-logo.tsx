@@ -11,7 +11,7 @@ const CollabTimeLogo = ({ height = 26 }: CollabTimeLogoProps) => {
       className="m-0 inline-block align-middle font-mono text-[1.125rem] font-bold tracking-tight text-primary-foreground no-underline"
       style={{ lineHeight: `${height}px` }}
     >
-      Collab Time
+      Collabtime
     </Text>
   );
 };

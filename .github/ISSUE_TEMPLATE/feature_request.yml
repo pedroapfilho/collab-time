@@ -1,0 +1,15 @@
+name: Feature request
+description: Suggest an improvement for distributed teams.
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Suggested behavior and alternatives
+    validations:
+      required: true

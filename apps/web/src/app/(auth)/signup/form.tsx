@@ -176,7 +176,7 @@ const SignupForm = ({ searchParams }: Props) => {
                 {isInvalid ? (
                   <FieldError errors={field.state.meta.errors} />
                 ) : (
-                  <FieldDescription>Must be at least 8 characters long.</FieldDescription>
+                  <FieldDescription>Must be at least 12 characters long.</FieldDescription>
                 )}
               </Field>
             );

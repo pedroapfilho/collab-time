@@ -82,7 +82,7 @@ const SectionCardFooter = ({ bordered, className, ...props }: SectionCardFooterP
   return (
     <div
       className={cn(
-        "flex items-center gap-2",
+        "flex flex-wrap items-center gap-2",
         bordered === true && "border-t pt-4 sm:pt-5",
         className,
       )}

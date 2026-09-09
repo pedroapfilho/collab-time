@@ -1,5 +1,7 @@
 "use client";
 
+import { cn } from "@repo/ui/lib/utils";
+
 import { formatHour } from "@/lib/utils";
 
 import { HOURS_IN_DAY, TIME_AXIS_HOURS, getEdgeAlignment } from "./helpers";
@@ -14,7 +16,7 @@ const TimeAxis = () => (
 
         return (
           <div
-            className="flex flex-col"
+            className={cn("flex flex-col", (hour === 6 || hour === 18) && "max-sm:hidden")}
             key={hour}
             style={{
               alignItems: getEdgeAlignment(isFirst, isLast),

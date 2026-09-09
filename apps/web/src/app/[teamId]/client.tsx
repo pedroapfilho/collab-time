@@ -22,6 +22,7 @@ import {
 } from "@/components/section-card";
 import { TeamInsights } from "@/components/team-insights";
 import { TimezoneVisualizer } from "@/components/timezone-visualizer";
+import { WorkspaceVisibilityDialog } from "@/components/workspace-visibility-dialog";
 import { useTeamMutation, useTeamQuery } from "@/hooks/use-team-query";
 import type { TeamStatus } from "@/types";
 
@@ -33,6 +34,7 @@ import { useDragEnd } from "./client/use-drag-end";
 import { useTeamMembership } from "./client/use-team-membership";
 import { useTeamNameEdit } from "./client/use-team-name-edit";
 import Loading from "./loading";
+import { TeamUnavailable } from "./team-unavailable";
 
 const DndWrapper = dynamic(
   async () => {
@@ -43,8 +45,11 @@ const DndWrapper = dynamic(
 );
 
 type TeamPageClientProps = {
+  hasPassword?: boolean;
+  invitationId?: string;
   isArchived: boolean;
   isAuthenticated: boolean;
+  isPrivate: boolean;
   spaceId: string | null;
   teamId: string;
   teamStatus: TeamStatus;
@@ -52,6 +57,7 @@ type TeamPageClientProps = {
 };
 
 type MembershipActionsProps = {
+  invitationId?: string;
   isAdmin: boolean;
   isAuthenticated: boolean;
   isMember: boolean;
@@ -74,18 +80,27 @@ const MembershipActions = ({ isAdmin, isMember, ...props }: MembershipActionsPro
 };
 
 const TeamPageClient = ({
+  hasPassword = false,
+  invitationId,
   isArchived,
   isAuthenticated,
+  isPrivate,
   spaceId,
   teamId,
   teamStatus: initialStatus,
   userId,
 }: TeamPageClientProps) => {
-  const { push } = useRouter();
+  const { push, refresh } = useRouter();
+  const [isVisibilityOpen, setIsVisibilityOpen] = useState(false);
+  const [savedVisibility, setSavedVisibility] = useState<{
+    hasPassword: boolean;
+    isPrivate: boolean;
+  } | null>(null);
+  const visibility = savedVisibility ?? { hasPassword, isPrivate };
   const [activeDragType, setActiveDragType] = useState<"group" | "member" | null>(null);
   const [isDeleteWorkspaceOpen, setIsDeleteWorkspaceOpen] = useState(false);
 
-  const { data: teamData, error: teamError } = useTeamQuery({ teamId });
+  const { data: teamData, error: teamError, isFetching, refetch } = useTeamQuery({ teamId });
 
   const teamMutation = useTeamMutation(teamId);
 
@@ -151,11 +166,15 @@ const TeamPageClient = ({
           isArchived={isArchived}
           isAuthenticated={isAuthenticated}
           isEditingName={isEditingName}
+          isPrivate={visibility.isPrivate}
           onCancelEdit={handleCancelEditName}
           onDeleteWorkspace={() => {
             setIsDeleteWorkspaceOpen(true);
           }}
           onEditName={handleStartEditName}
+          onEditVisibility={() => {
+            setIsVisibilityOpen(true);
+          }}
           onNameChange={setEditingTeamName}
           onSaveName={handleSaveName}
           teamName={displayName}
@@ -199,6 +218,7 @@ const TeamPageClient = ({
               />
 
               <MembershipActions
+                invitationId={invitationId}
                 isAdmin={isAdmin}
                 isAuthenticated={isAuthenticated}
                 isMember={isMember}
@@ -245,6 +265,19 @@ const TeamPageClient = ({
         </div>
       </main>
 
+      {spaceId !== null && isVisibilityOpen && (
+        <WorkspaceVisibilityDialog
+          hasPassword={visibility.hasPassword}
+          isPrivate={visibility.isPrivate}
+          onOpenChange={setIsVisibilityOpen}
+          onSaved={(saved) => {
+            setSavedVisibility(saved);
+            refresh();
+          }}
+          open={isVisibilityOpen}
+          spaceId={spaceId}
+        />
+      )}
       {spaceId !== null && (
         <DeleteWorkspaceDialog
           onDeleted={() => {
@@ -258,6 +291,18 @@ const TeamPageClient = ({
       )}
     </div>
   );
+
+  if (teamError && !isLoaded) {
+    return (
+      <TeamUnavailable
+        isRetrying={isFetching}
+        message={teamError.message}
+        onRetry={() => {
+          void refetch();
+        }}
+      />
+    );
+  }
 
   if (!isLoaded) {
     return <Loading />;

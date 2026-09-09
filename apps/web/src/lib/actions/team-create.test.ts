@@ -6,12 +6,14 @@ import { createMockSession, createTestMember } from "./test-helpers";
 type TeamCreateDeps = Parameters<typeof createTeamAction>[0];
 
 let uuidCounter = 0;
+const countAdminTeams = vi.fn<TeamCreateDeps["countAdminTeams"]>();
 const createTeamRecords = vi.fn<TeamCreateDeps["createTeamRecords"]>();
 const deleteSpace = vi.fn<TeamCreateDeps["deleteSpace"]>();
 const reportError = vi.fn<TeamCreateDeps["reportError"]>();
 const requireAuth = vi.fn<TeamCreateDeps["requireAuth"]>();
 const storeTeam = vi.fn<TeamCreateDeps["storeTeam"]>();
 const createTeam = createTeamAction({
+  countAdminTeams,
   createId: () => `test-uuid-${uuidCounter++}`,
   createMember: (overrides) => createTestMember({ id: "member-id", ...overrides }),
   createTeamRecords,
@@ -28,6 +30,7 @@ describe("createTeam", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     uuidCounter = 0;
+    countAdminTeams.mockResolvedValue(0);
     createTeamRecords.mockResolvedValue();
     deleteSpace.mockResolvedValue();
     requireAuth.mockResolvedValue(createMockSession());
@@ -112,5 +115,20 @@ describe("createTeam", () => {
     const result = await createTeam(TEST_TIMEZONE);
 
     expect(result).toEqual({ data: "test-uuid-0", success: true });
+  });
+
+  it("allows the 50th administered workspace", async () => {
+    countAdminTeams.mockResolvedValue(49);
+    const result = await createTeam(TEST_TIMEZONE);
+    expect(result.success).toBe(true);
+    expect(countAdminTeams).toHaveBeenCalledWith("user-123");
+  });
+
+  it("rejects the 51st administered workspace before writing", async () => {
+    countAdminTeams.mockResolvedValue(50);
+    const result = await createTeam(TEST_TIMEZONE);
+    expect(result).toEqual({ error: "You can administer up to 50 workspaces", success: false });
+    expect(createTeamRecords).not.toHaveBeenCalled();
+    expect(storeTeam).not.toHaveBeenCalled();
   });
 });

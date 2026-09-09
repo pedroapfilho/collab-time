@@ -33,7 +33,7 @@ describe("sendTransactionalEmail", () => {
       apiKey: "re_test",
       defaultReplyTo: "support@collabtime.io",
       from: "Custom <c@collabtime.io>",
-      subject: "Welcome to Collab Time, Ada! Please verify your email",
+      subject: "Welcome to Collabtime, Ada! Please verify your email",
       tags: [
         { name: "type", value: "welcome" },
         { name: "userId", value: "user-1" },
@@ -54,7 +54,7 @@ describe("sendTransactionalEmail", () => {
     );
 
     expect(sendEmailMock.mock.calls[0][0]).toMatchObject({
-      from: "Collab Time <noreply@email.collabtime.io>",
+      from: "Collabtime <noreply@email.collabtime.io>",
     });
   });
 
@@ -89,7 +89,7 @@ describe("sendTransactionalEmail", () => {
     );
 
     expect(sendEmailMock.mock.calls[0][0]).toMatchObject({
-      subject: "Ada invited you to join Design on Collab Time",
+      subject: "Ada invited you to join Design on Collabtime",
       tags: [
         { name: "type", value: "invitation" },
         { name: "teamId", value: "team-1" },
