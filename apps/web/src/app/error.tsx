@@ -23,13 +23,13 @@ const RouteError = ({ error, reset }: RouteErrorProps) => {
       {/* The boundary sits above the segment layouts, so it renders in place of the only
           <main id="main"> the root layout's skip link can target. */}
       <main className="flex w-full max-w-md flex-col items-center gap-6 text-center" id="main">
-        <div className="flex size-12 items-center justify-center rounded-full bg-destructive/10">
+        <div className="flex size-12 items-center justify-center bg-destructive/10">
           <AlertCircle className="size-5 text-destructive" />
         </div>
 
         <div className="flex flex-col gap-2">
           <h1
-            className="max-w-[24ch] text-2xl font-semibold tracking-tight text-balance"
+            className="max-w-[24ch] font-display text-2xl font-semibold tracking-tight text-balance"
             ref={headingRef}
             tabIndex={-1}
           >

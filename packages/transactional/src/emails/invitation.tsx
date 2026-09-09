@@ -1,5 +1,6 @@
 import { Heading, Link, Text } from "react-email";
 
+import { APP_NAME } from "../brand";
 import { Button } from "../components/button";
 import { Card } from "../components/card";
 import { Divider } from "../components/divider";
@@ -20,14 +21,14 @@ const InvitationEmail = ({
   teamUrl,
 }: InvitationEmailProps) => {
   return (
-    <BaseLayout preview={`${inviterName} invited you to join ${teamName} on Collabtime`}>
+    <BaseLayout preview={`${inviterName} invited you to join ${teamName} on ${APP_NAME}`}>
       <Heading className="mt-0 mb-4 text-2xl font-semibold tracking-tight text-balance break-words text-foreground">
         You&apos;ve been invited
       </Heading>
 
       <Text className="m-0 mb-6 text-base text-pretty break-words text-muted-foreground">
         <strong className="text-foreground">{inviterName}</strong> invited you to join{" "}
-        <strong className="text-foreground">{teamName}</strong> on Collabtime.
+        <strong className="text-foreground">{teamName}</strong> on {APP_NAME}.
       </Text>
 
       <div className="mb-6">

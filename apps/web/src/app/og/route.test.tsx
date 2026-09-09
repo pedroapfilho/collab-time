@@ -3,6 +3,7 @@ import { afterEach, expect, it, vi } from "vitest";
 
 import { GET as getImage } from "./route";
 
+vi.mock("@/lib/app-url", () => ({ getAppUrl: () => "https://collabtime.io" }));
 vi.mock("@/lib/observability", () => ({ log: { warn: vi.fn() } }));
 
 afterEach(() => {

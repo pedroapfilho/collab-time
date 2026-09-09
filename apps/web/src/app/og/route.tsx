@@ -1,7 +1,9 @@
 import { ImageResponse } from "next/og";
 
+import { getAppUrl } from "@/lib/app-url";
 import { APP_NAME, APP_TAGLINE } from "@/lib/constants";
 import { log } from "@/lib/observability";
+import { BRAND_INK, THEME_COLORS } from "@/lib/theme-colors";
 
 const loadFont = async (): Promise<ArrayBuffer | null> => {
   try {
@@ -39,11 +41,12 @@ const ROWS = [
 
 const GET = async () => {
   const font = await loadFont();
+  const host = new URL(getAppUrl()).host;
   return new ImageResponse(
     <div
       style={{
-        backgroundColor: "#0a0a0a",
-        color: "#fafafa",
+        backgroundColor: THEME_COLORS.dark,
+        color: BRAND_INK,
         display: "flex",
         flexDirection: "column",
         height: "100%",
@@ -88,7 +91,7 @@ const GET = async () => {
               />
               <div
                 style={{
-                  backgroundColor: "#fafafa",
+                  backgroundColor: BRAND_INK,
                   height: 28,
                   left: 220,
                   position: "absolute",
@@ -107,12 +110,15 @@ const GET = async () => {
           marginTop: "auto",
         }}
       >
-        <span
-          style={{ fontFamily: font ? "Manrope" : "sans-serif", fontSize: 30, fontWeight: 600 }}
-        >
-          {APP_NAME}
-        </span>
-        <span style={{ color: "#a3a3a3", fontSize: 20 }}>Free and open source · collabtime.io</span>
+        <div style={{ alignItems: "center", display: "flex", gap: 18 }}>
+          <div style={{ border: `4px solid ${BRAND_INK}`, height: 28, width: 28 }} />
+          <span
+            style={{ fontFamily: font ? "Manrope" : "sans-serif", fontSize: 30, fontWeight: 600 }}
+          >
+            {APP_NAME}
+          </span>
+        </div>
+        <span style={{ color: "#a3a3a3", fontSize: 20 }}>Free and open source · {host}</span>
       </div>
     </div>,
     {

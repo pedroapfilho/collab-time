@@ -22,7 +22,7 @@ type Props = {
 const Page = ({ searchParams }: Props) => (
   <Card>
     <CardHeader className="text-center">
-      <CardTitle className="text-xl">Welcome back</CardTitle>
+      <CardTitle className="font-display text-xl">Welcome back</CardTitle>
       <CardDescription>Sign in to your account to continue</CardDescription>
     </CardHeader>
     <CardContent>

@@ -16,7 +16,8 @@ const styles = {
     backgroundColor: "light-dark(#ffffff, #0a0a0a)",
     color: "light-dark(#0a0a0a, #fafafa)",
     display: "flex",
-    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+    fontFamily:
+      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     justifyContent: "center",
     margin: 0,
     minHeight: "100vh",
@@ -25,7 +26,7 @@ const styles = {
   button: {
     backgroundColor: "light-dark(#0a0a0a, #fafafa)",
     border: "none",
-    borderRadius: "0.5rem",
+    borderRadius: 0,
     color: "light-dark(#fafafa, #0a0a0a)",
     cursor: "pointer",
     fontFamily: "inherit",
@@ -35,7 +36,7 @@ const styles = {
     padding: "0.625rem 1.25rem",
   },
   digest: {
-    color: "light-dark(#71717a, #a1a1aa)",
+    color: "light-dark(#737373, #a3a3a3)",
     fontSize: "0.75rem",
     margin: 0,
   },
@@ -53,7 +54,7 @@ const styles = {
     textAlign: "center",
   },
   text: {
-    color: "light-dark(#52525b, #a1a1aa)",
+    color: "light-dark(#525252, #a3a3a3)",
     fontSize: "0.875rem",
     lineHeight: 1.6,
     margin: 0,
