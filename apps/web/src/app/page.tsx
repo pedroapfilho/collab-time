@@ -1,4 +1,3 @@
-import { Skeleton } from "@repo/ui/components/skeleton";
 import { dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { Suspense } from "react";
@@ -63,29 +62,6 @@ const HomeData = async ({ email, userId }: HomeDataProps) => {
   );
 };
 
-const HomeDataSkeleton = () => (
-  <div aria-busy="true" className="flex w-full flex-col">
-    <div className="flex items-center justify-between border-b border-border pb-3">
-      <Skeleton className="h-3.5 w-36 rounded-none" />
-    </div>
-    {["workspace-1", "workspace-2"].map((workspace) => (
-      <div
-        className="flex min-h-24 items-center justify-between gap-6 border-b border-border py-5"
-        key={workspace}
-      >
-        <div className="flex flex-col gap-2">
-          <Skeleton className="h-5 w-44 rounded-none sm:w-56" />
-          <Skeleton className="h-3 w-20 rounded-none" />
-        </div>
-        <div className="flex items-center gap-3">
-          <Skeleton className="size-4 rounded-none" />
-          <Skeleton className="size-8" />
-        </div>
-      </div>
-    ))}
-  </div>
-);
-
 const HomeContent = async () => {
   const session = await getSession();
 
@@ -95,31 +71,15 @@ const HomeContent = async () => {
 
   return (
     <HomeShell>
-      <Suspense fallback={<HomeDataSkeleton />}>
+      <Suspense fallback={null}>
         <HomeData email={session.user.email} userId={session.user.id} />
       </Suspense>
     </HomeShell>
   );
 };
 
-const HomeSkeleton = () => (
-  <div
-    aria-busy="true"
-    className="mx-auto flex w-full max-w-450 flex-1 flex-col gap-12 px-4 py-6 sm:px-6 lg:px-8 xl:px-12"
-  >
-    <div className="flex items-center justify-between">
-      <Skeleton className="h-6 w-32" />
-      <Skeleton className="size-9" />
-    </div>
-    <main className="flex flex-col gap-4 py-12" id="main">
-      <Skeleton className="h-10 w-full max-w-lg" />
-      <Skeleton className="h-5 w-full max-w-sm" />
-    </main>
-  </div>
-);
-
 const Home = () => (
-  <Suspense fallback={<HomeSkeleton />}>
+  <Suspense fallback={null}>
     <HomeContent />
   </Suspense>
 );

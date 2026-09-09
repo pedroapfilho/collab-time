@@ -112,7 +112,7 @@ Validated in `apps/web/src/lib/env.ts` with Zod at startup; access via `getEnv(k
 - **Prisma config**: `prisma.config.ts` uses `process.env.DATABASE_URL ?? ""` (not `env("DATABASE_URL")`) so `prisma generate` works in CI without DB creds.
 - **Turbo ordering**: root `turbo.json` `build.dependsOn` includes `db:generate` so the Prisma client exists before any app/package builds.
 - **Path alias**: `apps/web` uses `@/*` -> `src/*`.
-- **`/` serves two pages**: `app/page.tsx` reads the session and renders `components/landing/` when logged out, `app/home-client.tsx` (the dashboard) when logged in. The `Suspense` fallback must stay layout-neutral because either can follow it.
+- **`/` serves two pages**: `app/page.tsx` reads the session and renders `components/landing/` when logged out, `app/home-client.tsx` (the dashboard) when logged in. Both `Suspense` fallbacks are intentionally `null`: either page can follow the outer one, so no skeleton fits, and the dashboard header streams ahead of the inner one.
 - **Landing product demo**: `components/landing/product-preview.tsx` renders the real `TimezoneVisualizer` against the static team in `demo-team.ts`, lazily via `next/dynamic` with `ssr: false`. `useTimezoneData` is pure, so the demo needs no fetching. Keep `demo-team.ts` hours as they are unless you re-check the overlap: they are picked so four of five members share a real window.
 - **Design guidelines**: landing work follows the `design` skill's rule files. Two deliberate deviations, both because the repo's own lint wins: no `role="list"` on `<ul>` (oxlint `no-redundant-roles` errors on it), and the shared button keeps its ring-based `focus-visible` treatment rather than `outline-*`.
 

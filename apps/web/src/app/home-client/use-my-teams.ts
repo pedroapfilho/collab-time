@@ -39,8 +39,9 @@ const useMyTeams = () => {
 
   const {
     data: myTeams = [],
+    isError: isTeamsError,
     isLoading: isLoadingTeams,
-    isSuccess: hasLoadedTeams,
+    refetch: refetchTeams,
   } = useQuery({
     queryFn: async () => {
       const response = await fetch("/api/teams");
@@ -86,10 +87,11 @@ const useMyTeams = () => {
 
   return {
     handleToggleArchive,
-    hasLoadedTeams,
     isArchivePending,
     isLoadingTeams,
+    isTeamsError,
     myTeams: optimisticTeams,
+    refetchTeams,
   };
 };
 
