@@ -19,7 +19,10 @@ test.describe("Member Management", () => {
 
     await page.getByRole("button", { name: /add member/i }).click();
 
-    await expect(page.getByText("Alice Johnson")).toBeVisible({
+    const membersSection = page.locator("section").filter({
+      has: page.getByRole("heading", { exact: true, name: "Team Members" }),
+    });
+    await expect(membersSection.getByText("Alice Johnson", { exact: true })).toBeVisible({
       timeout: 5000,
     });
   });
