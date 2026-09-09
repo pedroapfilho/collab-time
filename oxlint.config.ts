@@ -8,6 +8,7 @@ export default defineConfig({
       // Next route entrypoints and client hooks require their framework context; mock that boundary, not the behavior under test.
       files: [
         "apps/web/src/app/[[]teamId]/page.test.tsx",
+        "apps/web/src/app/home-client/lists.test.tsx",
         "apps/web/src/components/accept-workspace-invitation.test.tsx",
         "apps/web/src/app/og/route.test.tsx",
       ],

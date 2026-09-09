@@ -17,6 +17,7 @@ import {
   APP_REPO_URL,
   APP_TITLE,
 } from "@/lib/constants";
+import { THEME_COLORS } from "@/lib/theme-colors";
 
 const geistMono = Geist_Mono({
   display: "swap",
@@ -38,8 +39,8 @@ const manrope = Manrope({
 
 export const viewport: Viewport = {
   themeColor: [
-    { color: "#ffffff", media: "(prefers-color-scheme: light)" },
-    { color: "#0a0a0a", media: "(prefers-color-scheme: dark)" },
+    { color: THEME_COLORS.light, media: "(prefers-color-scheme: light)" },
+    { color: THEME_COLORS.dark, media: "(prefers-color-scheme: dark)" },
   ],
 };
 
@@ -77,7 +78,7 @@ export const metadata: Metadata = {
   },
   title: {
     default: APP_TITLE,
-    template: `%s - ${APP_NAME}`,
+    template: `%s – ${APP_NAME}`,
   },
   twitter: {
     card: "summary_large_image",

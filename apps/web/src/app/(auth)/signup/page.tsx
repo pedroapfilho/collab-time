@@ -8,9 +8,10 @@ import {
 import type { Metadata } from "next";
 
 import SignupForm from "@/app/(auth)/signup/form";
+import { APP_NAME } from "@/lib/constants";
 
 const metadata: Metadata = {
-  description: "Enter your details to get started with Collabtime",
+  description: `Enter your details to get started with ${APP_NAME}`,
   robots: { follow: false, index: false },
   title: "Create your account",
 };
@@ -22,8 +23,8 @@ type Props = {
 const Page = ({ searchParams }: Props) => (
   <Card>
     <CardHeader className="text-center">
-      <CardTitle className="text-xl">Create your account</CardTitle>
-      <CardDescription>Enter your details to get started with Collabtime</CardDescription>
+      <CardTitle className="font-display text-xl">Create your account</CardTitle>
+      <CardDescription>Enter your details to get started with {APP_NAME}</CardDescription>
     </CardHeader>
     <CardContent>
       <SignupForm searchParams={searchParams} />

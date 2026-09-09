@@ -20,7 +20,7 @@ const metadata: Metadata = {
 const Page = () => (
   <Card>
     <CardHeader className="text-center">
-      <CardTitle className="text-xl">Reset your password</CardTitle>
+      <CardTitle className="font-display text-xl">Reset your password</CardTitle>
       <CardDescription>Enter a new password for your account</CardDescription>
     </CardHeader>
     <CardContent>
