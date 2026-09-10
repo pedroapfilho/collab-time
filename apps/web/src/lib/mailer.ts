@@ -15,7 +15,7 @@ type MailerDeps = {
     config: MailerConfig,
   ) => Promise<{ error?: unknown; success: boolean }>;
 };
-export const getMailerConfig = (): MailerConfig | null => {
+const getMailerConfig = (): MailerConfig | null => {
   const apiKey = getEnv("RESEND_API_KEY");
   return apiKey !== undefined && apiKey !== ""
     ? { apiKey, from: getEnv("RESEND_FROM_EMAIL") }
