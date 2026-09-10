@@ -5,9 +5,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getPublicTeam } from "@/lib/actions/team-read";
 import type { ActionResult } from "@/lib/actions/types";
 import { queryKeys } from "@/lib/query-keys";
+import { teamMutationKey } from "@/lib/team-query-sync";
 import type { Team } from "@/types";
 
 type UseTeamQueryOptions = {
+  isLive?: boolean;
   teamId: string;
 };
 
@@ -20,7 +22,7 @@ const teamQueryKeys = {
   team: queryKeys.teams.detail,
 };
 
-const useTeamQuery = ({ teamId }: UseTeamQueryOptions) => {
+const useTeamQuery = ({ isLive = false, teamId }: UseTeamQueryOptions) => {
   return useQuery<TeamQueryData | null>({
     enabled: true,
     queryFn: async () => {
@@ -34,7 +36,7 @@ const useTeamQuery = ({ teamId }: UseTeamQueryOptions) => {
       };
     },
     queryKey: teamQueryKeys.team(teamId),
-    refetchInterval: 20 * 1000,
+    refetchInterval: isLive ? 5 * 60 * 1000 : 20 * 1000,
     refetchIntervalInBackground: false,
   });
 };
@@ -58,6 +60,7 @@ const useTeamMutation = (teamId: string) => {
       }
       return result;
     },
+    mutationKey: teamMutationKey(teamId),
     onError: (_error, _variables, context) => {
       if (context) {
         queryClient.setQueryData(queryKey, context.previous);
@@ -72,7 +75,9 @@ const useTeamMutation = (teamId: string) => {
       return { previous };
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey });
+      if (queryClient.isMutating({ mutationKey: teamMutationKey(teamId) }) === 1) {
+        void queryClient.invalidateQueries({ queryKey });
+      }
     },
   });
 };

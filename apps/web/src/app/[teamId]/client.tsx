@@ -23,6 +23,7 @@ import {
 import { TeamInsights } from "@/components/team-insights";
 import { TimezoneVisualizer } from "@/components/timezone-visualizer";
 import { WorkspaceVisibilityDialog } from "@/components/workspace-visibility-dialog";
+import { useTeamLiveSync } from "@/hooks/use-team-live-sync";
 import { useTeamMutation, useTeamQuery } from "@/hooks/use-team-query";
 import type { TeamStatus } from "@/types";
 
@@ -92,15 +93,17 @@ const TeamPageClient = ({
 }: TeamPageClientProps) => {
   const { push, refresh } = useRouter();
   const [isVisibilityOpen, setIsVisibilityOpen] = useState(false);
-  const [savedVisibility, setSavedVisibility] = useState<{
-    hasPassword: boolean;
-    isPrivate: boolean;
-  } | null>(null);
-  const visibility = savedVisibility ?? { hasPassword, isPrivate };
   const [activeDragType, setActiveDragType] = useState<"group" | "member" | null>(null);
   const [isDeleteWorkspaceOpen, setIsDeleteWorkspaceOpen] = useState(false);
 
-  const { data: teamData, error: teamError, isFetching, refetch } = useTeamQuery({ teamId });
+  // oxlint-disable-next-line node/no-sync -- This React hook subscribes to SSE; it performs no synchronous I/O.
+  const liveStatus = useTeamLiveSync({ refresh, teamId });
+  const {
+    data: teamData,
+    error: teamError,
+    isFetching,
+    refetch,
+  } = useTeamQuery({ isLive: liveStatus === "live", teamId });
 
   const teamMutation = useTeamMutation(teamId);
 
@@ -166,7 +169,7 @@ const TeamPageClient = ({
           isArchived={isArchived}
           isAuthenticated={isAuthenticated}
           isEditingName={isEditingName}
-          isPrivate={visibility.isPrivate}
+          isPrivate={isPrivate}
           onCancelEdit={handleCancelEditName}
           onDeleteWorkspace={() => {
             setIsDeleteWorkspaceOpen(true);
@@ -267,13 +270,10 @@ const TeamPageClient = ({
 
       {spaceId !== null && isVisibilityOpen && (
         <WorkspaceVisibilityDialog
-          hasPassword={visibility.hasPassword}
-          isPrivate={visibility.isPrivate}
+          hasPassword={hasPassword}
+          isPrivate={isPrivate}
           onOpenChange={setIsVisibilityOpen}
-          onSaved={(saved) => {
-            setSavedVisibility(saved);
-            refresh();
-          }}
+          onSaved={refresh}
           open={isVisibilityOpen}
           spaceId={spaceId}
         />

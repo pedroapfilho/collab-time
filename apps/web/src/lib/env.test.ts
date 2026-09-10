@@ -47,6 +47,16 @@ describe("validateEnv", () => {
     expect(() => validateEnv()).not.toThrow();
   });
 
+  it.each(["true", "false", ""])("accepts LIVE_SYNC_ENABLED=%s", (value) => {
+    vi.stubEnv("LIVE_SYNC_ENABLED", value);
+    expect(getEnv("LIVE_SYNC_ENABLED")).toBe(value === "" ? undefined : value);
+  });
+
+  it("rejects invalid live sync flags", () => {
+    vi.stubEnv("LIVE_SYNC_ENABLED", "enabled");
+    expect(() => validateEnv()).toThrow("Invalid environment variables");
+  });
+
   it("throws when REDIS_URL is set to a non-URL string", () => {
     vi.stubEnv("REDIS_URL", "not-a-url");
 
