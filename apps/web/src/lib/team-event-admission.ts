@@ -117,4 +117,4 @@ const acquireTeamEventConnection = createTeamEventAdmission({
 });
 
 export { ACQUIRE_LEASE, acquireTeamEventConnection, createTeamEventAdmission, LEASE_SECONDS };
-export type { Admission, AdmissionDeps };
+export type { AdmissionDeps };

@@ -212,5 +212,5 @@ const createTeamEventStream = (deps: TeamEventStreamDeps): Response => {
   });
 };
 
-export { createTeamEventStream, HEARTBEAT_MS, STREAM_LIFETIME_MS };
+export { createTeamEventStream };
 export type { AccessResult, TeamEventStreamDeps };

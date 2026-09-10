@@ -240,4 +240,4 @@ export {
   teamEventHub,
   TEAM_EVENTS_CHANNEL,
 };
-export type { TeamEvent, TeamListener, TeamNotification, TeamSubscriber };
+export type { TeamEvent, TeamListener, TeamNotification };
