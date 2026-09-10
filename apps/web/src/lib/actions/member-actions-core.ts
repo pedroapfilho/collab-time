@@ -1,19 +1,30 @@
 import type { requireAuth, requireTeamMember } from "@/lib/team-auth";
-import type { Team, TeamMember } from "@/types";
+import type { Team, TeamMember, TeamRecord } from "@/types";
 
+import { displayName } from "../display-name";
 import { MAX_MEMBERS_PER_TEAM } from "../limits";
-import { TeamMemberInputSchema, TeamMemberUpdateSchema } from "../validation";
+import type { claimOrCreateMemberSlot } from "../team-slots";
+import {
+  TeamMemberInputSchema,
+  TeamMemberUpdateSchema,
+  TeamNameSchema,
+  UUIDSchema,
+} from "../validation";
 
 import { checkUuid, sanitizeTeam } from "./helpers";
 import type { MutateTeam } from "./helpers";
 import type { ActionErrorEvent, ActionResult } from "./types";
 
 type MemberActionDeps = {
+  claimOrCreateSlot: typeof claimOrCreateMemberSlot;
   createId: () => string;
   mutateTeam: MutateTeam;
+  readTeam: (teamId: string) => Promise<TeamRecord | null>;
+  removeMembershipForSlot: (teamId: string, userId: string, callerUserId: string) => Promise<void>;
   reportError: (event: ActionErrorEvent) => void;
   requireAuth: typeof requireAuth;
   requireTeamMember: typeof requireTeamMember;
+  revokeInvitationsForMember: (teamId: string, memberId: string) => Promise<void>;
 };
 
 const createMemberActions = (deps: MemberActionDeps) => {
@@ -50,14 +61,41 @@ const createMemberActions = (deps: MemberActionDeps) => {
   const removeMember = async (teamId: string, memberId: string): Promise<ActionResult<Team>> => {
     const mutationResult = await deps.mutateTeam({
       errorContext: "remove member",
-      mutate: (team) => {
-        if (!team.members.some((member) => member.id === memberId)) {
+      mutate: (team, prepared) => {
+        const member = team.members.find((slot) => slot.id === memberId);
+        if (!member) {
           return { error: "Member not found", ok: false };
         }
-        team.members = team.members.filter((member) => member.id !== memberId);
+        if (member.userId !== prepared.userId) {
+          return {
+            error: "This profile changed while removing it. Refresh and try again.",
+            ok: false,
+          };
+        }
+        team.members = team.members.filter((slot) => slot.id !== memberId);
         return { ok: true, value: sanitizeTeam(team) };
       },
-      prelude: () => checkUuid(memberId, "member ID"),
+      prelude: async () => {
+        const check = checkUuid(memberId, "member ID");
+        if (!check.ok) {
+          return check;
+        }
+        const session = await deps.requireAuth();
+        const team = await deps.readTeam(teamId);
+        if (team === null) {
+          return { error: "Team not found", ok: false };
+        }
+        const member = team.members.find((slot) => slot.id === memberId);
+        if (!member) {
+          return { error: "Member not found", ok: false };
+        }
+        const userId = member.userId;
+        await deps.revokeInvitationsForMember(teamId, memberId);
+        if (userId !== undefined && userId !== "" && userId !== session.user.id) {
+          await deps.removeMembershipForSlot(teamId, userId, session.user.id);
+        }
+        return { ok: true, value: { userId } };
+      },
       teamId,
     });
     return mutationResult;
@@ -102,11 +140,10 @@ const createMemberActions = (deps: MemberActionDeps) => {
         return { ok: true, value: sanitizeTeam(team) };
       },
       prelude: () => {
-        const trimmed = name.trim().slice(0, 100);
-        if (!trimmed) {
-          return { error: "Team name cannot be empty", ok: false };
-        }
-        return { ok: true, value: trimmed };
+        const parsed = TeamNameSchema.safeParse(name);
+        return parsed.success
+          ? { ok: true, value: parsed.data }
+          : { error: parsed.error.issues[0]?.message ?? "Invalid workspace name", ok: false };
       },
       teamId,
     });
@@ -215,6 +252,33 @@ const createMemberActions = (deps: MemberActionDeps) => {
     return mutationResult;
   };
 
+  const createOwnMemberSlot = async (
+    teamId: string,
+  ): Promise<ActionResult<{ created: boolean; memberId: string }>> => {
+    try {
+      if (!UUIDSchema.safeParse(teamId).success) {
+        return { error: "Invalid team ID", success: false };
+      }
+      const session = await deps.requireAuth();
+      await deps.requireTeamMember(teamId);
+      const result = await deps.claimOrCreateSlot(teamId, {
+        name: displayName(session.user.name, session.user.email),
+        userId: session.user.id,
+      });
+      return result.ok
+        ? { data: { created: result.created, memberId: result.memberId }, success: true }
+        : { error: result.error, success: false };
+    } catch (error) {
+      deps.reportError({
+        error,
+        message: "Failed to add own profile",
+        route: "actions/member",
+        teamId,
+      });
+      return { error: "Could not add your profile. Try again.", success: false };
+    }
+  };
+
   const reorderMembers = async (
     teamId: string,
     memberIds: Array<string>,
@@ -242,6 +306,7 @@ const createMemberActions = (deps: MemberActionDeps) => {
 
   return {
     addMember,
+    createOwnMemberSlot,
     importMembers,
     removeMember,
     reorderMembers,

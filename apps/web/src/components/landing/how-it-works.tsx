@@ -2,7 +2,7 @@ import { Section } from "./section";
 
 const STEPS = [
   {
-    body: "One click creates a workspace with you on the timeline. Nothing to configure first.",
+    body: "Name your workspace and you’re on the timeline. Then add your teammates.",
     title: "Create a workspace",
   },
   {

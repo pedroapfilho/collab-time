@@ -10,11 +10,14 @@ type ActionResult<T> =
 
 type ActionErrorEvent = {
   error?: unknown;
+  invitationId?: string;
+  memberId?: string;
   message: string;
   reason?: string;
   requestId?: string;
   route: string;
   teamId?: string;
+  userId?: string;
 };
 
 export type { ActionErrorEvent, ActionResult };

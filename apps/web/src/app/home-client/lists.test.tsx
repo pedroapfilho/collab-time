@@ -117,3 +117,25 @@ describe("HomeLists", () => {
     });
   });
 });
+
+it("shows invitation expiry on the dashboard", async () => {
+  const expiresAt = new Date(Date.now() + 14 * 86_400_000).toISOString();
+  respondWith((url) =>
+    url.endsWith("/api/invitations")
+      ? {
+          invitations: [
+            {
+              expiresAt,
+              id: "invite",
+              inviterName: "Owner",
+              memberId: "slot",
+              teamId: "team",
+              teamName: "Platform",
+            },
+          ],
+        }
+      : { teams: [] },
+  );
+  renderLists();
+  expect(await screen.findByText(/Invited by Owner · Expires in 14 days/)).toBeInTheDocument();
+});

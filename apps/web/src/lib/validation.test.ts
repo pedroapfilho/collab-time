@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   PasswordSchema,
+  TeamNameSchema,
+  normalizeEmail,
+  InvitationEmailSchema,
+  CuidSchema,
   TeamGroupInputSchema,
   TeamMemberInputSchema,
   UUIDSchema,
@@ -120,4 +124,16 @@ describe("PasswordSchema", () => {
   it("accepts minimum length password", () => {
     expect(PasswordSchema.safeParse("123456").success).toBe(true);
   });
+});
+
+it("validates invitation IDs, email and workspace names", () => {
+  expect(CuidSchema.safeParse("cmf12345678901234567890123").success).toBe(true);
+  expect(CuidSchema.safeParse("550e8400-e29b-41d4-a716-446655440000").success).toBe(false);
+  expect(InvitationEmailSchema.parse(normalizeEmail(" Person@Example.com "))).toBe(
+    "person@example.com",
+  );
+  expect(InvitationEmailSchema.safeParse("invalid@").success).toBe(false);
+  expect(TeamNameSchema.parse("  Team  ")).toBe("Team");
+  expect(TeamNameSchema.safeParse(" ").success).toBe(false);
+  expect(TeamNameSchema.safeParse("a".repeat(101)).success).toBe(false);
 });

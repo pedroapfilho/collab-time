@@ -48,6 +48,7 @@ const TeamTitle = ({
         aria-label="Team name"
         autoFocus
         className="h-14 w-full max-w-xl border border-input bg-background px-3 font-display text-3xl font-semibold tracking-[-0.04em] text-foreground focus:border-ring focus:ring-2 focus:ring-ring/20 focus:outline-none sm:h-18 sm:text-5xl"
+        maxLength={100}
         onBlur={onSave}
         onChange={(e) => {
           onChange(e.target.value);

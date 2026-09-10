@@ -15,6 +15,7 @@ import {
   getPendingJoinRequests,
 } from "@/lib/actions/join-requests";
 import type { ActionResult } from "@/lib/actions/types";
+import { queryKeys } from "@/lib/query-keys";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
 
 type JoinRequestsPanelProps = {
@@ -28,8 +29,6 @@ type JoinRequest = {
 };
 
 type RowAction = "approve" | "deny" | null;
-
-const joinRequestsQueryKey = (teamId: string) => ["join-requests", teamId] as const;
 
 type JoinRequestRowProps = {
   onSettled: () => void;
@@ -130,11 +129,11 @@ const JoinRequestsPanel = ({ teamId }: JoinRequestsPanelProps) => {
       }
       return result.data;
     },
-    queryKey: joinRequestsQueryKey(teamId),
+    queryKey: queryKeys.joinRequests(teamId),
   });
 
   const invalidateRequests = () => {
-    void queryClient.invalidateQueries({ queryKey: joinRequestsQueryKey(teamId) });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.joinRequests(teamId) });
   };
 
   const handleToggle = () => {

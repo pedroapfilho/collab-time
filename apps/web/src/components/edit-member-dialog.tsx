@@ -20,17 +20,14 @@ import {
 } from "@repo/ui/components/select";
 import { toast } from "@repo/ui/components/sonner";
 import { Spinner } from "@repo/ui/components/spinner";
-import { captureException } from "@sentry/nextjs";
 import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
-import { Mail } from "lucide-react";
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { z } from "zod";
 
 import { GroupSelector } from "@/components/group-selector";
 import { HourSelectField } from "@/components/hour-select-field";
 import { teamQueryKeys } from "@/hooks/use-team-query";
-import { inviteMember } from "@/lib/actions/invitation-actions";
 import { updateMember, updateOwnMember } from "@/lib/actions/member-actions";
 import {
   COMMON_TIMEZONES,
@@ -39,7 +36,9 @@ import {
   fuzzyMatchTimezone,
   isCommonTimezone,
 } from "@/lib/timezones";
-import type { TeamGroup, TeamMember } from "@/types";
+import type { PendingTeamInvitation, TeamGroup, TeamMember } from "@/types";
+
+import { MemberInviteSection } from "./member-invite-section";
 
 type EditMemberDialogProps = {
   groups: Array<TeamGroup>;
@@ -47,6 +46,7 @@ type EditMemberDialogProps = {
   mode?: "admin" | "claim";
   onOpenChange: (open: boolean) => void;
   open: boolean;
+  pendingInvite?: PendingTeamInvitation;
   teamId: string;
 };
 
@@ -83,33 +83,17 @@ const SaveButtonLabel = ({ isClaim, isPending }: SaveButtonLabelProps) => {
   return <>Save Changes</>;
 };
 
-const EditMemberForm = ({ groups, member, mode, onOpenChange, teamId }: EditMemberFormProps) => {
+const EditMemberForm = ({
+  groups,
+  member,
+  mode,
+  onOpenChange,
+  pendingInvite,
+  teamId,
+}: EditMemberFormProps) => {
   const queryClient = useQueryClient();
   const isClaim = mode === "claim";
   const [isPending, startTransition] = useTransition();
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [isInviting, setIsInviting] = useState(false);
-
-  const handleSendInvitation = async () => {
-    setIsInviting(true);
-    try {
-      const result = await inviteMember(teamId, member.id, inviteEmail);
-      if (result.success) {
-        const msg = result.data.emailSent
-          ? `Invitation sent to ${inviteEmail}`
-          : `Invitation created for ${inviteEmail}`;
-        toast.success(msg);
-        setInviteEmail("");
-      } else {
-        toast.error(result.error);
-      }
-    } catch (error) {
-      captureException(error);
-      toast.error("Failed to send invitation");
-    }
-    setIsInviting(false);
-  };
-
   const defaultValues: FormValues = {
     groupId: member.groupId ?? "",
     name: member.name,
@@ -308,33 +292,7 @@ const EditMemberForm = ({ groups, member, mode, onOpenChange, teamId }: EditMemb
         </div>
 
         {!isClaim && (member.userId === undefined || member.userId === "") && (
-          <div className="border-t border-border pt-4">
-            <FieldLabel htmlFor="invite-email">Invite User</FieldLabel>
-            <div className="flex gap-2">
-              <Input
-                autoComplete="email"
-                id="invite-email"
-                inputMode="email"
-                onChange={(e) => {
-                  setInviteEmail(e.target.value);
-                }}
-                placeholder="m@example.com"
-                type="email"
-                value={inviteEmail}
-              />
-              <Button
-                aria-label="Send invitation"
-                disabled={isInviting || !inviteEmail}
-                onClick={() => {
-                  void handleSendInvitation();
-                }}
-                type="button"
-                variant="outline"
-              >
-                {isInviting ? <Spinner /> : <Mail className="size-4" />}
-              </Button>
-            </div>
-          </div>
+          <MemberInviteSection memberId={member.id} pendingInvite={pendingInvite} teamId={teamId} />
         )}
 
         <DialogFooter>
@@ -367,6 +325,7 @@ const EditMemberDialog = ({
   mode = "admin",
   onOpenChange,
   open,
+  pendingInvite,
   teamId,
 }: EditMemberDialogProps) => {
   return (
@@ -378,6 +337,7 @@ const EditMemberDialog = ({
           member={member}
           mode={mode}
           onOpenChange={onOpenChange}
+          pendingInvite={pendingInvite}
           teamId={teamId}
         />
       </DialogContent>

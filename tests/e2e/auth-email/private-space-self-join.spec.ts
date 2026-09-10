@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 import { webUrl } from "../../../playwright.config";
 import { extractLink, waitForEmail } from "../helpers/resend";
 import { makeTestEmail } from "../helpers/test-email";
+import { HomePage } from "../pages/home.page";
 
 test.skip(!process.env.RESEND_API_KEY, "needs RESEND_API_KEY (test mode)");
 
@@ -21,7 +22,7 @@ test.describe("Private space password self-join", () => {
     const owner = await browser.newContext({ storageState: "tests/e2e/.auth/user.json" });
     const ownerPage = await owner.newPage();
     await ownerPage.goto(`${webUrl}/`);
-    await ownerPage.getByRole("button", { name: /create a workspace/i }).click();
+    await new HomePage(ownerPage).createWorkspace();
     await expect(ownerPage).toHaveURL(/\/[a-f0-9-]{36}$/u, { timeout: 15_000 });
     const teamId = new URL(ownerPage.url()).pathname.slice(1);
 

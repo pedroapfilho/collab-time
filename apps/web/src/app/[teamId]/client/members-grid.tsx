@@ -6,7 +6,10 @@ import { Users } from "lucide-react";
 
 import { MemberCard } from "@/components/member-card";
 import { SortableMemberCard } from "@/components/sortable-member-card";
-import type { TeamGroup, TeamMember } from "@/types";
+import { usePendingTeamInvitations } from "@/hooks/use-pending-team-invitations";
+import { formatExpiresIn } from "@/lib/invitation-expiry";
+import { useHalfMinuteTick } from "@/lib/use-tick";
+import type { PendingTeamInvitation, TeamGroup, TeamMember } from "@/types";
 
 type MembersGridProps = {
   currentUserId?: string;
@@ -25,6 +28,20 @@ const MembersGrid = ({
   orderedMembers,
   teamId,
 }: MembersGridProps) => {
+  const { data: invitations = [] } = usePendingTeamInvitations(teamId, isAdmin);
+  useHalfMinuteTick();
+  const inviteByMember = new Map<string, PendingTeamInvitation>();
+  for (const invitation of invitations) {
+    const existing = inviteByMember.get(invitation.memberId);
+    if (
+      !existing ||
+      (formatExpiresIn(existing.expiresAt) === "Expired" &&
+        formatExpiresIn(invitation.expiresAt) !== "Expired")
+    ) {
+      inviteByMember.set(invitation.memberId, invitation);
+    }
+  }
+
   if (orderedMembers.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-12 text-center">
@@ -57,6 +74,7 @@ const MembersGrid = ({
                 hasClaimedProfile={hasClaimedProfile}
                 key={member.id}
                 member={member}
+                pendingInvite={inviteByMember.get(member.id)}
                 teamId={teamId}
               />
             ))}

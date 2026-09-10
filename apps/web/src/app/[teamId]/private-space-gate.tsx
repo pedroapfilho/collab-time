@@ -14,23 +14,33 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { z } from "zod";
 
+import { InviteMismatchNotice } from "./client/invite-mismatch-notice";
+
 const passwordSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
 type PrivateSpaceGateProps = {
+  inviteMismatch?: { invitedEmailMasked: string };
   isAuthenticated: boolean;
+  returnTo?: string;
   spaceId: string;
   teamId: string;
 };
 
-const PrivateSpaceGate = ({ isAuthenticated, spaceId, teamId }: PrivateSpaceGateProps) => {
+const PrivateSpaceGate = ({
+  inviteMismatch,
+  isAuthenticated,
+  returnTo,
+  spaceId,
+  teamId,
+}: PrivateSpaceGateProps) => {
   const { refresh } = useRouter();
   const [isPending, setIsPending] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [accepted, setAccepted] = useState(false);
 
-  const redirectTarget = `/${teamId}`;
+  const redirectTarget = returnTo ?? `/${teamId}`;
   const withRedirect = (path: string) => `${path}?redirect=${encodeURIComponent(redirectTarget)}`;
 
   const form = useForm({
@@ -90,6 +100,8 @@ const PrivateSpaceGate = ({ isAuthenticated, spaceId, teamId }: PrivateSpaceGate
               : "Enter the team password to continue."}
           </p>
         </div>
+
+        {inviteMismatch && <InviteMismatchNotice {...inviteMismatch} returnTo={redirectTarget} />}
 
         {accepted ? (
           <div className="flex flex-col gap-2">

@@ -307,12 +307,18 @@ type TeamContentsMutation<TValue> = (
   team: TeamRecord | null,
 ) => { error: string; ok: false } | { ok: true; team: TeamRecord | null; value: TValue };
 
+export type TeamContentsFailureReason =
+  | "read-failed"
+  | "rejected"
+  | "unconfigured"
+  | "write-failed";
+
 type TeamContentsResult<TValue> =
   | { ok: true; value: TValue }
   | {
       error: string;
       ok: false;
-      reason: "read-failed" | "rejected" | "unconfigured" | "write-failed";
+      reason: TeamContentsFailureReason;
     };
 
 const applyTeamContents = async <TValue>(

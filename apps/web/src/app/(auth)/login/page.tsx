@@ -6,8 +6,11 @@ import {
   CardTitle,
 } from "@repo/ui/components/card";
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 import LoginForm from "@/app/(auth)/login/form";
+
+import { AuthGate } from "../auth-gate";
 
 const metadata: Metadata = {
   description: "Sign in to your account to continue",
@@ -20,15 +23,20 @@ type Props = {
 };
 
 const Page = ({ searchParams }: Props) => (
-  <Card>
-    <CardHeader className="text-center">
-      <CardTitle className="font-display text-xl">Welcome back</CardTitle>
-      <CardDescription>Sign in to your account to continue</CardDescription>
-    </CardHeader>
-    <CardContent>
-      <LoginForm searchParams={searchParams} />
-    </CardContent>
-  </Card>
+  <>
+    <Suspense fallback={null}>
+      <AuthGate searchParams={searchParams} />
+    </Suspense>
+    <Card>
+      <CardHeader className="text-center">
+        <CardTitle className="font-display text-xl">Welcome back</CardTitle>
+        <CardDescription>Sign in to your account to continue</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <LoginForm searchParams={searchParams} />
+      </CardContent>
+    </Card>
+  </>
 );
 
 /** @public Next.js app-router reads the instant segment config via the module loader */

@@ -1,16 +1,10 @@
 import type { requireAuth, requireTeamAdmin } from "@/lib/team-auth";
 
+import { displayName } from "../display-name";
+import type { SlotClaimResult } from "../team-slots";
 import { UUIDSchema } from "../validation";
 
 import type { ActionErrorEvent, ActionResult } from "./types";
-
-const displayName = (name: string | null, email: string): string => {
-  if (name !== null && name !== "") {
-    return name;
-  }
-  const localPart = email.split("@")[0];
-  return localPart !== undefined && localPart !== "" ? localPart : "Unknown";
-};
 
 type JoinRequestRecord = {
   id: string;
@@ -30,14 +24,10 @@ type PendingJoinRequestView = {
   userName: string;
 };
 
-type TeamMemberWriteResult =
-  | { memberId: string; ok: true }
-  | { ok: false; reason: "read-failed" | "rejected" | "unconfigured" | "write-failed" };
-
 type JoinRequestDeps = {
-  addTeamMember: (teamId: string, userId: string, name: string) => Promise<TeamMemberWriteResult>;
   approveMembership: (requestId: string, teamId: string, userId: string) => Promise<void>;
   denyRequest: (requestId: string) => Promise<void>;
+  ensureMemberSlot: (teamId: string, userId: string, name: string) => Promise<SlotClaimResult>;
   findRequest: (requestId: string) => Promise<JoinRequestRecord | null>;
   listPending: (
     teamId: string,
@@ -50,6 +40,8 @@ type JoinRequestDeps = {
     existingRequest: { status: string } | null;
     teamExists: boolean;
   }>;
+  notifyAdmins: (teamId: string, user: { email: string; name: string | null }) => void;
+  notifyRequester: (request: JoinRequestRecord, decision: "approved" | "denied") => void;
   reportError: (event: ActionErrorEvent) => void;
   requireAuth: typeof requireAuth;
   requireTeamAdmin: typeof requireTeamAdmin;
@@ -77,6 +69,7 @@ const createJoinRequestActions = (deps: JoinRequestDeps) => {
       }
 
       const joinRequest = await deps.upsertRequest(teamId, session.user.id);
+      deps.notifyAdmins(teamId, session.user);
       return { data: { requestId: joinRequest.id }, success: true };
     } catch (error) {
       deps.reportError({
@@ -101,25 +94,18 @@ const createJoinRequestActions = (deps: JoinRequestDeps) => {
       }
 
       await deps.requireTeamAdmin(joinRequest.teamId);
-      await deps.approveMembership(requestId, joinRequest.teamId, joinRequest.userId);
 
       const memberName = displayName(joinRequest.user.name, joinRequest.user.email);
-      const applied = await deps.addTeamMember(joinRequest.teamId, joinRequest.userId, memberName);
+      const applied = await deps.ensureMemberSlot(
+        joinRequest.teamId,
+        joinRequest.userId,
+        memberName,
+      );
       if (!applied.ok) {
-        deps.reportError({
-          message: "Approval committed but the member was not stored",
-          reason: applied.reason,
-          requestId,
-          route: "actions/join-requests",
-        });
-        return {
-          error:
-            applied.reason === "read-failed" || applied.reason === "unconfigured"
-              ? "The request was approved, but the team could not be reached. Try again in a moment."
-              : "The request was approved, but adding the member failed. Add them from the team page.",
-          success: false,
-        };
+        return { error: applied.error, success: false };
       }
+      await deps.approveMembership(requestId, joinRequest.teamId, joinRequest.userId);
+      deps.notifyRequester(joinRequest, "approved");
 
       return { data: { memberId: applied.memberId }, success: true };
     } catch (error) {
@@ -144,6 +130,7 @@ const createJoinRequestActions = (deps: JoinRequestDeps) => {
 
       await deps.requireTeamAdmin(joinRequest.teamId);
       await deps.denyRequest(requestId);
+      deps.notifyRequester(joinRequest, "denied");
       return { data: undefined, success: true };
     } catch (error) {
       deps.reportError({

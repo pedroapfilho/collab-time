@@ -32,6 +32,7 @@ import { HourSelectField } from "@/components/hour-select-field";
 import { teamQueryKeys } from "@/hooks/use-team-query";
 import { inviteMember } from "@/lib/actions/invitation-actions";
 import { addMember } from "@/lib/actions/member-actions";
+import { queryKeys } from "@/lib/query-keys";
 import {
   COMMON_TIMEZONES,
   DEFAULT_WORKING_HOURS_END,
@@ -120,10 +121,11 @@ const AddMemberForm = ({ groups, isFirstMember, onOpenChange, teamId }: AddMembe
         if (emailValue) {
           const inviteResult = await inviteMember(teamId, result.data.member.id, emailValue);
           if (inviteResult.success) {
+            void queryClient.invalidateQueries({ queryKey: queryKeys.teamInvitations(teamId) });
             if (inviteResult.data.emailSent) {
               toast.success(`Invitation sent to ${emailValue}`);
             } else {
-              toast.success(`Invitation created for ${emailValue}`);
+              toast.success(`Invitation created for ${emailValue} (email was not delivered)`);
             }
           } else {
             toast.error(inviteResult.error);

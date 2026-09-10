@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { sendEmail } from "./send-email";
+import type { TransactionalEmail } from "./senders";
 import { createTransactionalEmailSender } from "./senders";
 
 const sendEmailMock = vi.fn<typeof sendEmail>();
@@ -96,5 +97,51 @@ describe("sendTransactionalEmail", () => {
       ],
       to: "invitee@example.com",
     });
+  });
+});
+
+it.each<TransactionalEmail>([
+  {
+    recipientEmail: "admin@example.com",
+    requesterName: "Friend",
+    teamId: "team",
+    teamName: "",
+    teamUrl: "https://example.com/team",
+    type: "join-request-received",
+  },
+  {
+    decision: "approved",
+    recipientEmail: "friend@example.com",
+    teamId: "team",
+    teamName: "",
+    teamUrl: "https://example.com/team",
+    type: "join-request-decided",
+  },
+  {
+    decision: "declined",
+    inviteeName: "Friend",
+    recipientEmail: "owner@example.com",
+    teamId: "team",
+    teamName: "",
+    teamUrl: "https://example.com/team",
+    type: "invitation-decided",
+  },
+  {
+    inviterName: "Owner",
+    recipientEmail: "friend@example.com",
+    teamId: "team",
+    teamName: "",
+    teamUrl: "https://example.com/team",
+    type: "invitation",
+  },
+])("renders $type with a workspace fallback and team tags", async (email) => {
+  sendEmailMock.mockClear();
+  await sendTransactionalEmail(email, { apiKey: "test" });
+  expect(sendEmailMock.mock.calls[0][0]).toMatchObject({
+    subject: expect.stringContaining("a workspace"),
+    tags: [
+      { name: "type", value: email.type },
+      { name: "teamId", value: "team" },
+    ],
   });
 });

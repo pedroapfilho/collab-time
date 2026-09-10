@@ -41,6 +41,7 @@ const isTeamRole = (value: TeamRoleInput): value is TeamRole =>
   teamRoleSchema.safeParse(value).success;
 
 type PendingInvitation = {
+  expiresAt: string | null;
   id: string;
   inviterName: string;
   memberId: string;
@@ -50,3 +51,11 @@ type PendingInvitation = {
 
 export type { PendingInvitation, Team, TeamGroup, TeamMember, TeamRecord, TeamRole, TeamStatus };
 export { isTeamRole };
+
+export type PendingTeamInvitation = {
+  createdAt: string;
+  email: string;
+  expiresAt: string | null;
+  id: string;
+  memberId: string;
+};

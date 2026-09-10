@@ -6,8 +6,11 @@ import {
   CardTitle,
 } from "@repo/ui/components/card";
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 import RecoverForm from "@/app/(auth)/recover/form";
+
+import { AuthGate } from "../auth-gate";
 
 const metadata: Metadata = {
   description: "Enter your email and we'll send you a link to reset your password",
@@ -16,17 +19,22 @@ const metadata: Metadata = {
 };
 
 const Page = () => (
-  <Card>
-    <CardHeader className="text-center">
-      <CardTitle className="font-display text-xl">Recover your account</CardTitle>
-      <CardDescription>
-        Enter your email and we&apos;ll send you a link to reset your password
-      </CardDescription>
-    </CardHeader>
-    <CardContent>
-      <RecoverForm />
-    </CardContent>
-  </Card>
+  <>
+    <Suspense fallback={null}>
+      <AuthGate />
+    </Suspense>
+    <Card>
+      <CardHeader className="text-center">
+        <CardTitle className="font-display text-xl">Recover your account</CardTitle>
+        <CardDescription>
+          Enter your email and we&apos;ll send you a link to reset your password
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <RecoverForm />
+      </CardContent>
+    </Card>
+  </>
 );
 
 /** @public Next.js app-router reads the instant segment config via the module loader */

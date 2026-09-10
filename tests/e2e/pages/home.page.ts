@@ -19,8 +19,10 @@ class HomePage {
     await this.page.goto("/");
   };
 
-  createWorkspace = async () => {
+  createWorkspace = async (name = "E2E Workspace") => {
     await this.createWorkspaceButton.click();
+    await this.page.getByLabel("Workspace name").fill(name);
+    await this.page.getByRole("button", { exact: true, name: "Create workspace" }).click();
   };
 
   getHeading = () => this.heading;

@@ -6,10 +6,13 @@ import { notFound } from "next/navigation";
 import { AcceptWorkspaceInvitation } from "@/components/accept-workspace-invitation";
 import { getPublicTeam } from "@/lib/actions/team-read";
 import { getSession } from "@/lib/auth-server";
+import { displayName } from "@/lib/display-name";
+import { isInvitationOpen, maskEmail } from "@/lib/invitations";
 import { createQueryClient } from "@/lib/query-client";
 import { queryKeys } from "@/lib/query-keys";
 import { canAccessSpace } from "@/lib/space-visibility";
 import { getTeamName } from "@/lib/team-meta";
+import { CuidSchema, normalizeEmail } from "@/lib/validation";
 import { QueryProvider } from "@/providers/query-provider";
 import { isTeamRole } from "@/types";
 import type { TeamStatus } from "@/types";
@@ -19,6 +22,7 @@ import { PrivateSpaceGate } from "./private-space-gate";
 
 type TeamPageProps = {
   params: Promise<{ teamId: string }>;
+  searchParams: Promise<{ invite?: string | Array<string> }>;
 };
 
 export const generateMetadata = async ({ params }: TeamPageProps): Promise<Metadata> => {
@@ -34,6 +38,7 @@ export const generateMetadata = async ({ params }: TeamPageProps): Promise<Metad
 
 type TeamStatusResult = {
   invitationId?: string;
+  inviterName?: string;
   isArchived: boolean;
   status: TeamStatus;
 };
@@ -55,7 +60,8 @@ const getTeamStatus = async (
       where: { userId_teamId: { teamId, userId } },
     }),
     prisma.invitation.findUnique({
-      where: { email_teamId: { email: email.toLowerCase(), teamId } },
+      include: { invitedBy: { select: { email: true, name: true } } },
+      where: { email_teamId: { email: normalizeEmail(email), teamId } },
     }),
     prisma.joinRequest.findUnique({
       where: { userId_teamId: { teamId, userId } },
@@ -66,8 +72,13 @@ const getTeamStatus = async (
     return { isArchived: membership.archivedAt !== null, status: membership.role };
   }
 
-  if (invitation?.status === "PENDING") {
-    return { invitationId: invitation.id, isArchived: false, status: "INVITED" };
+  if (invitation && isInvitationOpen(invitation, new Date())) {
+    return {
+      invitationId: invitation.id,
+      inviterName: displayName(invitation.invitedBy.name, invitation.invitedBy.email),
+      isArchived: false,
+      status: "INVITED",
+    };
   }
 
   if (joinRequest?.status === "PENDING") {
@@ -77,8 +88,12 @@ const getTeamStatus = async (
   return { isArchived: false, status: "none" };
 };
 
-const TeamPage = async ({ params }: TeamPageProps) => {
+const TeamPage = async ({ params, searchParams }: TeamPageProps) => {
   const { teamId } = await params;
+
+  const query = await searchParams;
+  const invite = CuidSchema.safeParse(query.invite);
+  const returnTo = `/${teamId}${invite.success ? `?invite=${invite.data}` : ""}`;
 
   const [session, space] = await Promise.all([
     getSession(),
@@ -91,9 +106,24 @@ const TeamPage = async ({ params }: TeamPageProps) => {
 
   const {
     invitationId,
+    inviterName,
     isArchived,
     status: teamStatus,
   } = session ? await getTeamStatus(session.user.id, session.user.email, teamId) : GUEST_STATUS;
+
+  const teamName = (await getTeamName(teamId)) ?? "Untitled workspace";
+  let inviteMismatch: { invitedEmailMasked: string } | undefined;
+  if (invite.success && session && (teamStatus === "none" || teamStatus === "PENDING")) {
+    const hintedInvitation = await prisma.invitation.findUnique({ where: { id: invite.data } });
+    if (
+      hintedInvitation &&
+      hintedInvitation.teamId === teamId &&
+      isInvitationOpen(hintedInvitation, new Date()) &&
+      normalizeEmail(hintedInvitation.email) !== normalizeEmail(session.user.email)
+    ) {
+      inviteMismatch = { invitedEmailMasked: maskEmail(hintedInvitation.email) };
+    }
+  }
 
   if (space.isPrivate && teamStatus === "INVITED" && invitationId !== undefined) {
     return (
@@ -102,14 +132,26 @@ const TeamPage = async ({ params }: TeamPageProps) => {
         id="main"
       >
         <h1 className="font-display text-2xl font-semibold">Join this workspace</h1>
-        <AcceptWorkspaceInvitation invitationId={invitationId} />
+        <div className="border-y border-border py-6">
+          <AcceptWorkspaceInvitation
+            invitationId={invitationId}
+            inviterName={inviterName}
+            teamName={teamName}
+          />
+        </div>
       </main>
     );
   }
 
   if (!(await canAccessSpace(space, session?.user.id))) {
     return (
-      <PrivateSpaceGate isAuthenticated={Boolean(session)} spaceId={space.id} teamId={teamId} />
+      <PrivateSpaceGate
+        inviteMismatch={inviteMismatch}
+        isAuthenticated={Boolean(session)}
+        returnTo={returnTo}
+        spaceId={space.id}
+        teamId={teamId}
+      />
     );
   }
 
@@ -126,9 +168,12 @@ const TeamPage = async ({ params }: TeamPageProps) => {
       <TeamPageClient
         hasPassword={isSpaceOwner ? Boolean(space.accessPassword) : undefined}
         invitationId={invitationId}
+        inviteMismatch={inviteMismatch}
+        inviterName={inviterName}
         isArchived={isArchived}
         isAuthenticated={Boolean(session)}
         isPrivate={space.isPrivate}
+        returnTo={returnTo}
         spaceId={isSpaceOwner ? space.id : null}
         teamId={teamId}
         teamStatus={teamStatus}
