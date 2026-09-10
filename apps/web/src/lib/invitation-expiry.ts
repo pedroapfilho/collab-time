@@ -1,0 +1,14 @@
+export const formatExpiresIn = (expiresAt: string | null, now = new Date()): string | null => {
+  if (expiresAt === null) {
+    return null;
+  }
+  const remaining = new Date(expiresAt).getTime() - now.getTime();
+  if (remaining <= 0) {
+    return "Expired";
+  }
+  if (remaining < 86_400_000) {
+    return "Expires today";
+  }
+  const days = Math.ceil(remaining / 86_400_000);
+  return `Expires in ${days} ${days === 1 ? "day" : "days"}`;
+};

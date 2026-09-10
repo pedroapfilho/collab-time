@@ -89,6 +89,7 @@ enum InvitationStatus {
   PENDING
   ACCEPTED
   DECLINED
+  REVOKED
 }
 
 model Membership {
@@ -174,6 +175,7 @@ model TeamMember {
 }
 
 model Invitation {
+  expiresAt   DateTime?
   id          String           @id @default(cuid())
   email       String
   teamId      String
@@ -186,6 +188,7 @@ model Invitation {
   updatedAt   DateTime         @updatedAt
 
   @@unique([email, teamId])
+  @@index([teamId, status])
   @@index([email, status])
   @@index([teamId])
 }

@@ -4,10 +4,12 @@ import { APP_NAME } from "../brand";
 import { Button } from "../components/button";
 import { Card } from "../components/card";
 import { Divider } from "../components/divider";
+import { teamLabel } from "../team-label";
 
 import { BaseLayout } from "./base-layout";
 
 type InvitationEmailProps = {
+  expiresAt?: string;
   inviterName: string;
   recipientEmail: string;
   teamName: string;
@@ -15,20 +17,23 @@ type InvitationEmailProps = {
 };
 
 const InvitationEmail = ({
+  expiresAt,
   inviterName,
   recipientEmail,
   teamName,
   teamUrl,
 }: InvitationEmailProps) => {
   return (
-    <BaseLayout preview={`${inviterName} invited you to join ${teamName} on ${APP_NAME}`}>
+    <BaseLayout
+      preview={`${inviterName} invited you to join ${teamLabel(teamName)} on ${APP_NAME}`}
+    >
       <Heading className="mt-0 mb-4 text-2xl font-semibold tracking-tight text-balance break-words text-foreground">
         You&apos;ve been invited
       </Heading>
 
       <Text className="m-0 mb-6 text-base text-pretty break-words text-muted-foreground">
         <strong className="text-foreground">{inviterName}</strong> invited you to join{" "}
-        <strong className="text-foreground">{teamName}</strong> on {APP_NAME}.
+        <strong className="text-foreground">{teamLabel(teamName)}</strong> on {APP_NAME}.
       </Text>
 
       <div className="mb-6">
@@ -43,6 +48,13 @@ const InvitationEmail = ({
           invitation.
         </Text>
       </Card>
+
+      {expiresAt !== undefined && (
+        <Text>
+          This invitation expires on{" "}
+          {new Date(expiresAt).toLocaleDateString("en-US", { dateStyle: "long", timeZone: "UTC" })}.
+        </Text>
+      )}
 
       <Divider spacing="sm" />
 

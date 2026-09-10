@@ -3,9 +3,13 @@ import * as React from "react";
 import { APP_NAME, DEFAULT_FROM } from "../brand";
 import { ChangeEmail } from "../emails/change-email";
 import { InvitationEmail } from "../emails/invitation";
+import { InvitationDecided } from "../emails/invitation-decided";
+import { JoinRequestDecided } from "../emails/join-request-decided";
+import { JoinRequestReceived } from "../emails/join-request-received";
 import { PasswordResetEmail } from "../emails/password-reset";
 import { SignUpAttemptEmail } from "../emails/sign-up-attempt";
 import { WelcomeEmail } from "../emails/welcome";
+import { teamLabel } from "../team-label";
 
 import { sendEmail } from "./send-email";
 
@@ -48,6 +52,7 @@ type ChangeEmailPayload = {
 };
 
 type InvitationPayload = {
+  expiresAt?: string;
   inviterName: string;
   recipientEmail: string;
   teamId: string;
@@ -55,7 +60,20 @@ type InvitationPayload = {
   teamUrl: string;
 };
 
+type TeamNotificationPayload = {
+  recipientEmail: string;
+  teamId: string;
+  teamName: string;
+  teamUrl: string;
+};
 type TransactionalEmail =
+  | ({ requesterName: string; type: "join-request-received" } & TeamNotificationPayload)
+  | ({ decision: "approved" | "denied"; type: "join-request-decided" } & TeamNotificationPayload)
+  | ({
+      decision: "accepted" | "declined";
+      inviteeName: string;
+      type: "invitation-decided";
+    } & TeamNotificationPayload)
   | ({ type: "welcome" } & WelcomePayload)
   | ({ type: "sign-up-attempt" } & SignUpAttemptPayload)
   | ({ type: "password-reset" } & PasswordResetPayload)
@@ -66,6 +84,27 @@ type EmailBuild = { subject: string; template: React.ReactElement; to: string };
 
 const buildEmail = (email: TransactionalEmail): EmailBuild => {
   switch (email.type) {
+    case "join-request-received": {
+      return {
+        subject: `${email.requesterName} requested to join ${teamLabel(email.teamName)}`,
+        template: React.createElement(JoinRequestReceived, email),
+        to: email.recipientEmail,
+      };
+    }
+    case "join-request-decided": {
+      return {
+        subject: `Your request to join ${teamLabel(email.teamName)} was ${email.decision}`,
+        template: React.createElement(JoinRequestDecided, email),
+        to: email.recipientEmail,
+      };
+    }
+    case "invitation-decided": {
+      return {
+        subject: `${email.inviteeName} ${email.decision} your invitation to ${teamLabel(email.teamName)}`,
+        template: React.createElement(InvitationDecided, email),
+        to: email.recipientEmail,
+      };
+    }
     case "change-email-confirmation": {
       return {
         subject: `Confirm change of your ${APP_NAME} account email`,
@@ -80,8 +119,9 @@ const buildEmail = (email: TransactionalEmail): EmailBuild => {
     }
     case "invitation": {
       return {
-        subject: `${email.inviterName} invited you to join ${email.teamName} on ${APP_NAME}`,
+        subject: `${email.inviterName} invited you to join ${teamLabel(email.teamName)} on ${APP_NAME}`,
         template: React.createElement(InvitationEmail, {
+          expiresAt: email.expiresAt,
           inviterName: email.inviterName,
           recipientEmail: email.recipientEmail,
           teamName: email.teamName,
@@ -135,6 +175,12 @@ const buildEmail = (email: TransactionalEmail): EmailBuild => {
   }
 };
 
+const buildTags = (email: TransactionalEmail) => [
+  { name: "type", value: email.type },
+  ...("teamId" in email ? [{ name: "teamId", value: email.teamId }] : []),
+  ...("userId" in email ? [{ name: "userId", value: email.userId }] : []),
+];
+
 const createTransactionalEmailSender =
   (deliver: typeof sendEmail) => (email: TransactionalEmail, config: MailerConfig) => {
     const { subject, template, to } = buildEmail(email);
@@ -144,12 +190,7 @@ const createTransactionalEmailSender =
       defaultReplyTo: config.defaultReplyTo,
       from,
       subject,
-      tags: [
-        { name: "type", value: email.type },
-        email.type === "invitation"
-          ? { name: "teamId", value: email.teamId }
-          : { name: "userId", value: email.userId },
-      ],
+      tags: buildTags(email),
       template,
       to,
     });

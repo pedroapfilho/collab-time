@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { TEAM_NAME_MAX_LENGTH } from "./limits";
 import { COMMON_TIMEZONES } from "./timezones";
 
 const UUIDSchema = z.uuid("Invalid ID format");
@@ -58,3 +59,13 @@ export {
   TeamMemberUpdateSchema,
   UUIDSchema,
 };
+
+export const normalizeEmail = (email: string): string => email.trim().toLowerCase();
+export const InvitationEmailSchema = z.email("Invalid email address");
+// oxlint-disable-next-line typescript/no-deprecated -- Prisma generates CUID v1 IDs; accepting CUID2 would reject existing invitations.
+export const CuidSchema = z.cuid("Invalid invitation ID");
+export const TeamNameSchema = z
+  .string()
+  .trim()
+  .min(1, "Workspace name is required")
+  .max(TEAM_NAME_MAX_LENGTH, "Workspace name must be 100 characters or less");
