@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 
 import { log } from "@/lib/observability";
+import { publishTeamEvent } from "@/lib/team-events";
 import {
   DEFAULT_MEMBER_TIMEZONE,
   DEFAULT_WORKING_HOURS_END,
@@ -69,6 +70,7 @@ type ErrorEvent = Parameters<typeof log.error>[0];
 type TeamStoreDeps = {
   createId: () => string;
   isRedisConfigured: () => boolean;
+  publishTeamEvent: typeof publishTeamEvent;
   readTeamJson: typeof readTeamJson;
   readTeamSummariesFromPostgres: typeof readTeamSummariesFromPostgres;
   reportError: (event: ErrorEvent) => void;
@@ -79,6 +81,7 @@ type TeamStoreDeps = {
 const defaultTeamStoreDeps: TeamStoreDeps = {
   createId: uuidv4,
   isRedisConfigured,
+  publishTeamEvent,
   readTeamJson,
   readTeamSummariesFromPostgres,
   reportError: log.error,
@@ -272,6 +275,8 @@ const writeTeamRecord = async (
   deps: TeamStoreDeps = defaultTeamStoreDeps,
 ): Promise<void> => {
   await deps.set(teamKey(teamId), JSON.stringify(team), "EX", ttlSeconds);
+
+  await deps.publishTeamEvent(teamId, "contents");
 
   try {
     await deps.writeTeamMirror(teamId, team);

@@ -18,6 +18,7 @@ import type { TeamStoreDeps } from "./team-store";
 
 const createIdMock = vi.fn(() => "test-uuid");
 const isRedisConfiguredMock = vi.fn(() => true);
+const publishTeamEventMock = vi.fn<TeamStoreDeps["publishTeamEvent"]>();
 const readTeamJsonMock = vi.fn<TeamStoreDeps["readTeamJson"]>();
 const readTeamSummariesFromPostgresMock = vi.fn<TeamStoreDeps["readTeamSummariesFromPostgres"]>();
 const reportErrorMock = vi.fn<TeamStoreDeps["reportError"]>();
@@ -26,6 +27,7 @@ const writeTeamMirrorMock = vi.fn<TeamStoreDeps["writeTeamMirror"]>();
 const deps: TeamStoreDeps = {
   createId: createIdMock,
   isRedisConfigured: isRedisConfiguredMock,
+  publishTeamEvent: publishTeamEventMock,
   readTeamJson: readTeamJsonMock,
   readTeamSummariesFromPostgres: readTeamSummariesFromPostgresMock,
   reportError: reportErrorMock,
@@ -63,6 +65,7 @@ const mockMirroredSpaces = (spaces: Array<MirroredSpace>): void => {
 beforeEach(() => {
   vi.clearAllMocks();
   setMock.mockResolvedValue();
+  publishTeamEventMock.mockResolvedValue();
   writeTeamMirrorMock.mockResolvedValue();
   readTeamJsonMock.mockResolvedValue(null);
   isRedisConfiguredMock.mockReturnValue(true);

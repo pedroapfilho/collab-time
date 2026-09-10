@@ -3,7 +3,7 @@ import { APP_REPO_URL } from "@/lib/constants";
 
 import { Section } from "./section";
 
-const STACK = ["Next.js", "React", "Prisma", "Better Auth", "Tailwind CSS"];
+const STACK = ["Next.js", "React", "Prisma", "Redis Pub/Sub", "SSE", "Better Auth", "Tailwind CSS"];
 
 const OpenSource = () => (
   <Section className="border-t border-border">

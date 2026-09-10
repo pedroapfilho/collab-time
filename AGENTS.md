@@ -13,7 +13,7 @@ Collabtime is a team timezone visualizer. Distributed teams create spaces, add m
 - **UI**: React 19, Tailwind CSS v4, Base UI (`@base-ui/react`), Motion, Sonner, Lucide
 - **Fonts**: Inter as `--font-sans` (body / UI), Manrope as `--font-display` (headings), Geist Mono as `--font-mono` (clock and hour numerals). All three loaded via `next/font` in `apps/web/src/app/layout.tsx`, registered in the `@theme inline` block of `packages/ui/src/styles/globals.css`
 - **Forms**: `@tanstack/react-form` + Zod 4 (NOT react-hook-form)
-- **Data**: TanStack Query with 20s polling for team sync
+- **Data**: TanStack Query with SSE team sync, five-minute safety polling, and 20s fallback polling
 - **Auth**: Better Auth (email/password)
 - **DB**: Prisma 7 + PostgreSQL via `@prisma/adapter-pg`
 - **Cache / session**: Redis via `ioredis` (Railway in prod, supports `redis://` or `rediss://`)
@@ -106,7 +106,7 @@ Validated in `apps/web/src/lib/env.ts` with Zod at startup; access via `getEnv(k
 
 - **Lazy init via Proxy**: Auth client, Redis, and Prisma instances defer initialization until first access. Avoids build-time errors when env vars are absent.
 - **Server/client boundary**: `@repo/auth/server` holds the Better Auth server instance; `@repo/auth/client` re-exports the React auth client. Never cross.
-- **Polling sync**: Team data fetched every 20s via `use-team-query.ts`. Mutations call `useUpdateTeamCache` for immediate optimistic update on the acting client.
+- **Live sync**: `use-team-live-sync.ts` shares an SSE connection per team per tab; Redis Pub/Sub notifications invalidate the existing `getPublicTeam` query. `use-team-query.ts` polls every five minutes while live and every 20s otherwise. Mutations use `useTeamMutation` for optimistic updates. `LIVE_SYNC_ENABLED=false` disables streams; Turbo forwards this optional server flag. Stream callbacks use captured access tokens, never request-scoped cookies or sessions.
 - **Forms**: validate `onBlur` + `onChange` with Zod. Show errors via `field.state.meta.isTouched && !field.state.meta.isValid`. Field primitives (`Field`, `FieldGroup`, `FieldLabel`, `FieldError`) live in `@repo/ui`.
 - **TanStack `field` in effect deps is banned**: never put `field.handleChange` inside `useEffect`/`useCallback` with `field` in deps. Use `field.form.setFieldValue(field.name, value)` with a stable ref.
 - **Prisma config**: `prisma.config.ts` uses `process.env.DATABASE_URL ?? ""` (not `env("DATABASE_URL")`) so `prisma generate` works in CI without DB creds.
@@ -135,7 +135,7 @@ All under `apps/web/src/app/api/`:
 
 - `auth/[...all]`: Better Auth catch-all
 - `spaces/` and `spaces/[spaceId]/`: Space CRUD, password verification
-- `teams/`: the caller's teams, plus `teams/[teamId]/membership` for archive toggling
+- `teams/`: the caller's teams, plus `teams/[teamId]/membership` for archive toggling and `teams/[teamId]/events` for authorized SSE notifications
 - `invitations/`: the caller's pending invitations
 
 ## Data model

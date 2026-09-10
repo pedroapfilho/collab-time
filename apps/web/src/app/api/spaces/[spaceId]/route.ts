@@ -1,11 +1,12 @@
 import { prisma, type Space } from "@repo/db";
-import { updateTag } from "next/cache";
+import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { getSession } from "@/lib/auth-server";
 import { hashPassword } from "@/lib/crypto";
 import { log, withEvlog } from "@/lib/observability";
+import { publishTeamEvent } from "@/lib/team-events";
 import { teamNameTag } from "@/lib/team-meta";
 import { SpaceAccessPasswordSchema } from "@/lib/validation";
 
@@ -109,6 +110,8 @@ export const PATCH = withEvlog(async (request: Request, { params }: Params) => {
       where: { id: spaceId },
     });
 
+    await publishTeamEvent(updatedSpace.teamId, "space");
+
     return spaceResponse(updatedSpace);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -135,7 +138,8 @@ export const DELETE = withEvlog(async (_request: Request, { params }: Params) =>
       where: { id: spaceId },
     });
 
-    updateTag(teamNameTag(owned.space.teamId));
+    await publishTeamEvent(owned.space.teamId, "deleted");
+    revalidateTag(teamNameTag(owned.space.teamId), { expire: 0 });
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -51,3 +51,4 @@ const canAccessSpace = async (
 };
 
 export { canAccessSpace };
+export type { SpaceAccess, SpaceAccessStore };

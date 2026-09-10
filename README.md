@@ -54,6 +54,7 @@ Only `DATABASE_URL` and `BETTER_AUTH_SECRET` (32+ characters) are required by st
 | Variable                              | Purpose                                                                                             |
 | ------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | `REDIS_URL`                           | Optional at startup; required for creating and updating teams. Supports `redis://` and `rediss://`. |
+| `LIVE_SYNC_ENABLED`                   | SSE team updates; enabled when unset. Set `false` to use 20-second polling.                         |
 | `WEB_APP_URL`                         | Absolute app URL for email and metadata; set your public URL in production.                         |
 | `AUTH_ALLOWED_HOSTS`                  | Additional hostnames accepted by Better Auth.                                                       |
 | `CORS_ORIGINS`, `TRUSTED_ORIGINS`     | Browser origins accepted for authentication.                                                        |
@@ -66,6 +67,12 @@ Only `DATABASE_URL` and `BETTER_AUTH_SECRET` (32+ characters) are required by st
 ## Deploying
 
 The app runs on Vercel with Postgres and Redis hosted anywhere accessible to it. Configure the variables above, use the web app's `vercel-build` script, and set `WEB_APP_URL` and auth host/origin settings to your domain.
+
+Live team updates use Redis Pub/Sub and `GET /api/teams/[teamId]/events`. Confirm that the Vercel project supports 300-second Node functions before enabling live sync in production; otherwise set `LIVE_SYNC_ENABLED=false`. Streams rotate at 285 seconds, heartbeat every 25 seconds, and close after a tab has been hidden for ten seconds. Live tabs keep a five-minute safety poll; connection failures restore the 20-second poll. Missing Redis still prevents team writes.
+
+Failed connections use a lightweight `HEAD` request on the events endpoint to detect revoked access or deleted workspaces, including changes missed while a tab was hidden. Access checks remain available when live sync is disabled. Connection lease cleanup is registered with Next.js `after()` so Vercel waits for the Redis release after a stream closes.
+
+Admission allows 30 attempts per principal per minute, with ten concurrent streams per signed-in user or 40 per anonymous IP. Expiring Redis leases recover after killed functions. Inspect structured stream open/close logs, `429`/`503` responses, Redis connections, and Vercel concurrency/memory usage during rollout. Keep a preview open for six minutes to verify rotation without a `504`; disable the flag and redeploy to restore polling if needed.
 
 Production `db:deploy` runs **`prisma db push`**, using `DIRECT_DATABASE_URL`, when `VERCEL_ENV=production`. It does not apply a migration history. Preview and local invocations skip that deployment step; provision their schemas separately.
 

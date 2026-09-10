@@ -1,4 +1,4 @@
-import { Redis } from "ioredis";
+import { Redis, type RedisOptions } from "ioredis";
 
 import { log } from "@/lib/observability";
 
@@ -9,24 +9,28 @@ const isRedisConfigured = (): boolean => {
   return url !== undefined && url !== "";
 };
 
-const getRedis = (): Redis | null => {
-  if (cachedRedis) {
-    return cachedRedis;
-  }
-
+/**
+ * Every connection shares these: `family: 0` for Railway's dual-stack DNS,
+ * `lazyConnect` so importing never opens a socket. Returns null when unset.
+ */
+const createRedisClient = (overrides: RedisOptions = {}): Redis | null => {
   const url = process.env.REDIS_URL;
 
   if (url === undefined || url === "") {
     return null;
   }
 
-  cachedRedis = new Redis(url, {
+  return new Redis(url, {
     enableAutoPipelining: true,
     family: 0,
     lazyConnect: true,
     maxRetriesPerRequest: 3,
+    ...overrides,
   });
+};
 
+const getRedis = (): Redis | null => {
+  cachedRedis ??= createRedisClient();
   return cachedRedis;
 };
 
@@ -97,6 +101,7 @@ const readTeamJson = createTeamJsonReader({
 });
 
 export {
+  createRedisClient,
   createTeamJsonReader,
   isRedisConfigured,
   readTeamJson,

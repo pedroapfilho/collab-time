@@ -1,166 +1,168 @@
-import { expect, test } from "../fixtures/auth.fixture";
+import type { Page } from "@playwright/test";
+import { prisma } from "@repo/db";
 
-const STORAGE_STATE = "tests/e2e/.auth/user.json";
+import { expect, test as base } from "../fixtures/realtime.fixture";
 
-test.describe.skip("Realtime Sync", () => {
-  let teamId: string;
-
-  test.beforeEach(async ({ browser }) => {
-    const contextA = await browser.newContext({ storageState: STORAGE_STATE });
-    const pageA = await contextA.newPage();
-    await pageA.goto("/");
-    await pageA.getByRole("button", { name: /create a workspace/i }).click();
-    await expect(pageA).toHaveURL(/\/[a-f0-9-]+/, { timeout: 10_000 });
-    teamId = new URL(pageA.url()).pathname.slice(1);
-    await contextA.close();
+const members = (page: Page) =>
+  page.locator("section").filter({
+    has: page.getByRole("heading", { exact: true, name: "Team Members" }),
   });
 
-  test("member added syncs to second browser", async ({ browser }) => {
-    const contextA = await browser.newContext({ storageState: STORAGE_STATE });
-    const contextB = await browser.newContext({ storageState: STORAGE_STATE });
-    const pageA = await contextA.newPage();
-    const pageB = await contextB.newPage();
-
-    await Promise.all([pageA.goto(`/${teamId}`), pageB.goto(`/${teamId}`)]);
-
-    await expect(pageA.getByRole("button", { name: /add team member/i })).toBeVisible({
-      timeout: 60_000,
-    });
-    await expect(pageB.getByRole("heading", { name: "Team Members" })).toBeVisible({
-      timeout: 60_000,
-    });
-
-    await pageA.getByRole("button", { name: /add team member/i }).click();
-    await pageA.getByLabel("Name *").click();
-    await pageA.getByLabel("Name *").pressSequentially("Realtime Alice", { delay: 10 });
-    await pageA.keyboard.press("Tab");
-    await pageA.getByRole("button", { name: /add member/i }).click();
-
-    await expect(pageA.getByText("Realtime Alice")).toBeVisible({
-      timeout: 5000,
-    });
-
-    await expect(pageB.getByText("Realtime Alice")).toBeVisible({
-      timeout: 15_000,
-    });
-
-    await contextA.close();
-    await contextB.close();
+const openLiveTeam = async (page: Page, teamId: string) => {
+  await page.addInitScript(() => {
+    const NativeEventSource = window.EventSource;
+    window.EventSource = class extends NativeEventSource {
+      override close() {
+        super.close();
+        document.documentElement.dataset.liveSyncReady = "false";
+      }
+      constructor(url: string | URL, options?: EventSourceInit) {
+        super(url, options);
+        this.addEventListener("ready", () => {
+          document.documentElement.dataset.liveSyncReady = "true";
+        });
+      }
+    };
   });
+  const responsePromise = page.waitForResponse(
+    (response) => new URL(response.url()).pathname === `/api/teams/${teamId}/events`,
+  );
+  await page.goto(`/${teamId}`);
+  const response = await responsePromise;
+  expect(response.status()).toBe(200);
+  expect(response.headers()["content-type"]).toContain("text/event-stream");
+  await expect(page.locator("html")).toHaveAttribute("data-live-sync-ready", "true");
+  await expect(page.getByRole("heading", { exact: true, name: "Team Members" })).toBeVisible();
+};
 
-  test("group created syncs to second browser", async ({ browser }) => {
-    const contextA = await browser.newContext({ storageState: STORAGE_STATE });
-    const contextB = await browser.newContext({ storageState: STORAGE_STATE });
-    const pageA = await contextA.newPage();
-    const pageB = await contextB.newPage();
+const addMember = async (page: Page, name: string) => {
+  await page.getByRole("button", { name: /add team member/i }).click();
+  await page.getByLabel("Name *").fill(name);
+  await page.keyboard.press("Tab");
+  await page.getByRole("button", { exact: true, name: "Add Member" }).click();
+  await expect(members(page).getByText(name, { exact: true })).toBeVisible({ timeout: 5000 });
+};
 
-    await Promise.all([pageA.goto(`/${teamId}`), pageB.goto(`/${teamId}`)]);
-
-    await expect(pageA.getByRole("button", { name: /add group/i })).toBeVisible({
-      timeout: 60_000,
-    });
-    await expect(pageB.getByRole("heading", { name: "Groups" })).toBeVisible({
-      timeout: 60_000,
-    });
-
-    await pageA.getByRole("button", { name: /add group/i }).click();
-    await pageA.getByLabel("Group Name").click();
-    await pageA.getByLabel("Group Name").pressSequentially("Sync Test Group", { delay: 10 });
-    await pageA.keyboard.press("Tab");
-    await pageA.getByRole("button", { name: /create group/i }).click();
-
-    await expect(pageA.getByText("Sync Test Group")).toBeVisible({
-      timeout: 5000,
-    });
-
-    await expect(pageB.getByText("Sync Test Group")).toBeVisible({
-      timeout: 15_000,
-    });
-
-    await contextA.close();
-    await contextB.close();
-  });
-
-  test("team name change syncs to second browser", async ({ browser }) => {
-    const contextA = await browser.newContext({ storageState: STORAGE_STATE });
-    const contextB = await browser.newContext({ storageState: STORAGE_STATE });
-    const pageA = await contextA.newPage();
-    const pageB = await contextB.newPage();
-
-    await Promise.all([pageA.goto(`/${teamId}`), pageB.goto(`/${teamId}`)]);
-
-    await expect(pageA.getByRole("heading", { name: "Team Members" })).toBeVisible({
-      timeout: 10_000,
-    });
-    await expect(pageB.getByRole("heading", { name: "Team Members" })).toBeVisible({
-      timeout: 10_000,
-    });
-
-    const teamNameButton = pageA.locator("button").filter({
-      has: pageA.locator("h1"),
-    });
-    await teamNameButton.first().click();
-
-    const nameInput = pageA.locator('input[placeholder="Team name…"]');
-    await nameInput.clear();
-    await nameInput.pressSequentially("Synced Team Name", { delay: 10 });
-    await pageA.keyboard.press("Tab");
-
-    await expect(pageB.getByText("Synced Team Name")).toBeVisible({
-      timeout: 15_000,
-    });
-
-    await contextA.close();
-    await contextB.close();
-  });
-
-  test("member removed syncs to second browser", async ({ browser }) => {
-    const setupContext = await browser.newContext({
-      storageState: STORAGE_STATE,
-    });
-    const setupPage = await setupContext.newPage();
-    await setupPage.goto(`/${teamId}`);
-    await setupPage.getByRole("button", { name: /add team member/i }).click();
-    await setupPage.getByLabel("Name *").click();
-    await setupPage.getByLabel("Name *").pressSequentially("Removal Target", { delay: 10 });
-    await setupPage.keyboard.press("Tab");
-    await setupPage.getByRole("button", { name: /add member/i }).click();
-    await expect(setupPage.getByText("Removal Target")).toBeVisible({
-      timeout: 5000,
-    });
-    await setupContext.close();
-
-    const contextA = await browser.newContext({ storageState: STORAGE_STATE });
-    const contextB = await browser.newContext({ storageState: STORAGE_STATE });
-    const pageA = await contextA.newPage();
-    const pageB = await contextB.newPage();
-
-    await Promise.all([pageA.goto(`/${teamId}`), pageB.goto(`/${teamId}`)]);
-
-    await expect(pageA.getByText("Removal Target")).toBeVisible({
-      timeout: 10_000,
-    });
-    await expect(pageB.getByText("Removal Target")).toBeVisible({
-      timeout: 10_000,
-    });
-
-    const memberCard = pageA.locator("[class*='rounded']").filter({
-      hasText: "Removal Target",
-    });
-    await memberCard.getByRole("button", { name: /remove|delete/i }).click();
-
-    const confirmButton = pageA.getByRole("button", {
-      name: /confirm|remove|delete/i,
-    });
-    if (await confirmButton.isVisible().catch(() => false)) {
-      await confirmButton.click();
+const test = base.extend<{ peer: Page; teamId: string }>({
+  peer: async ({ browser, storageState, teamId }, use) => {
+    const context = await browser.newContext({ storageState });
+    try {
+      const page = await context.newPage();
+      await openLiveTeam(page, teamId);
+      await use(page);
+    } finally {
+      await context.close();
     }
+  },
+  teamId: async ({ createdTeamIds, homePage, page }, use) => {
+    await homePage.goto();
+    await homePage.createWorkspace();
+    await expect(page).toHaveURL(/\/[a-f0-9-]+/, { timeout: 10_000 });
+    await expect(page.getByRole("button", { name: /add team member/i })).toBeVisible();
+    const id = new URL(page.url()).pathname.slice(1);
+    createdTeamIds.push(id);
+    await use(id);
+  },
+});
 
-    await expect(pageB.getByText("Removal Target")).not.toBeVisible({
-      timeout: 15_000,
+const setVisibility = (page: Page, visibility: DocumentVisibilityState) =>
+  page.evaluate((state) => {
+    Object.defineProperty(document, "visibilityState", { configurable: true, value: state });
+    document.dispatchEvent(new Event("visibilitychange"));
+  }, visibility);
+
+for (const change of ["privacy", "password", "deletion"] as const) {
+  test(`recovers a ${change} change missed by a hidden guest`, async ({
+    browser,
+    request,
+    teamId,
+  }) => {
+    const { id: spaceId } = await prisma.space.findUniqueOrThrow({
+      select: { id: true },
+      where: { teamId },
     });
+    const guestContext = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    try {
+      if (change === "password") {
+        const privateSpace = await request.patch(`/api/spaces/${spaceId}`, {
+          data: { password: "OriginalGuestPassword123!", visibility: "private" },
+        });
+        expect(privateSpace.status()).toBe(200);
+        const verified = await guestContext.request.post(`/api/spaces/${spaceId}/verify-password`, {
+          data: { password: "OriginalGuestPassword123!" },
+        });
+        expect(verified.status()).toBe(200);
+      }
+      const guest = await guestContext.newPage();
+      await guest.clock.install();
+      await openLiveTeam(guest, teamId);
+      await setVisibility(guest, "hidden");
+      await guest.clock.runFor(10_000);
+      await expect(guest.locator("html")).toHaveAttribute("data-live-sync-ready", "false");
 
-    await contextA.close();
-    await contextB.close();
+      const updated =
+        change === "deletion"
+          ? await request.delete(`/api/spaces/${spaceId}`)
+          : await request.patch(`/api/spaces/${spaceId}`, {
+              data: { password: "ChangedGuestPassword123!", visibility: "private" },
+            });
+      expect(updated.status()).toBe(200);
+      const checked = guest.waitForResponse(
+        (response) =>
+          response.request().method() === "HEAD" &&
+          new URL(response.url()).pathname === `/api/teams/${teamId}/events`,
+      );
+      await setVisibility(guest, "visible");
+      const response = await checked;
+      expect(response.status()).toBe(change === "deletion" ? 404 : 403);
+      await expect(
+        guest.getByRole("heading", {
+          exact: true,
+          name: change === "deletion" ? "Page not found" : "Private team",
+        }),
+      ).toBeVisible();
+      await expect(
+        guest.getByRole("heading", { exact: true, name: "Team Members" }),
+      ).not.toBeVisible();
+    } finally {
+      await guestContext.close();
+    }
+  });
+}
+
+test.describe("Realtime Sync", () => {
+  test("member added syncs to second browser", async ({ page, peer }) => {
+    await addMember(page, "Realtime Alice");
+    await expect(members(peer).getByText("Realtime Alice", { exact: true })).toBeVisible({
+      timeout: 5000,
+    });
+  });
+
+  test("group created syncs to second browser", async ({ page, peer }) => {
+    await page.getByRole("button", { name: /add group/i }).click();
+    await page.getByLabel("Group Name").fill("Sync Test Group");
+    await page.keyboard.press("Tab");
+    await page.getByRole("button", { name: /create group/i }).click();
+    await expect(peer.getByText("Sync Test Group", { exact: true })).toBeVisible({ timeout: 5000 });
+  });
+
+  test("team name change syncs to second browser", async ({ page, peer }) => {
+    await page.getByRole("button", { name: "Edit team name" }).click();
+    await page.getByRole("textbox", { exact: true, name: "Team name" }).fill("Synced Team Name");
+    await page.keyboard.press("Tab");
+    await expect(peer.getByRole("heading", { exact: true, name: "Synced Team Name" })).toBeVisible({
+      timeout: 5000,
+    });
+  });
+
+  test("member removed syncs to second browser", async ({ page, peer }) => {
+    await addMember(page, "Removal Target");
+    await expect(members(peer).getByText("Removal Target", { exact: true })).toBeVisible({
+      timeout: 5000,
+    });
+    await page.getByRole("button", { exact: true, name: "Remove Removal Target" }).click();
+    await expect(members(peer).getByText("Removal Target", { exact: true })).not.toBeVisible({
+      timeout: 5000,
+    });
   });
 });

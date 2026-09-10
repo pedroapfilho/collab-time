@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { getSession } from "@/lib/auth-server";
+import { getClientIp } from "@/lib/client-ip";
 import { verifyPassword } from "@/lib/crypto";
 import { log, withEvlog } from "@/lib/observability";
 import { createSpaceAccessToken, SPACE_ACCESS_COOKIE_PREFIX } from "@/lib/space-access";
@@ -23,8 +24,7 @@ export const POST = withEvlog(async (request: Request, { params }: Params) => {
     const body = await request.json();
     const { password } = verifyPasswordSchema.parse(body);
 
-    const forwardedFor = request.headers.get("x-forwarded-for") ?? "";
-    const clientIp = forwardedFor.split(",")[0]?.trim() || "unknown";
+    const clientIp = getClientIp(request);
     const { allowed } = await checkRateLimit(`space-verify:${spaceId}:${clientIp}`, 10, 60);
     if (!allowed) {
       return NextResponse.json({ error: "Too many attempts. Try again later." }, { status: 429 });
