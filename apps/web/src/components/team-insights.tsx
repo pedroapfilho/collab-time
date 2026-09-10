@@ -66,7 +66,7 @@ const StatusGroup = ({
   tone,
 }: StatusGroupProps) => {
   return (
-    <div className={cn("flex flex-col gap-2.5 border-t border-border py-3.5", className)}>
+    <div className={cn("flex flex-col gap-2.5", className)}>
       <div className="flex items-center gap-2">
         <Icon className={cn("size-4 shrink-0", iconClassName ?? TONE_TEXT[tone])} />
         <h3 className="text-xs font-medium text-muted-foreground">{label}</h3>
@@ -167,7 +167,7 @@ const TeamInsights = ({ groups = EMPTY_GROUPS, members }: TeamInsightsProps) => 
         <SectionCardTitle icon={Users}>Team Status</SectionCardTitle>
       </SectionCardHeader>
       <SectionCardContent>
-        <div className="grid gap-x-8 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
           <StatusGroup
             count={onlineMembers.length}
             emptyLabel="No one is currently working"

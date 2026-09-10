@@ -2,7 +2,6 @@
 
 import { Badge } from "@repo/ui/components/badge";
 import { Button } from "@repo/ui/components/button";
-import { Card } from "@repo/ui/components/card";
 import { toast } from "@repo/ui/components/sonner";
 import { Spinner } from "@repo/ui/components/spinner";
 import {
@@ -169,7 +168,7 @@ const MemberCard = ({
 
   return (
     <>
-      <Card className="group h-full gap-3 border-x-0 border-t-0 px-0 py-4 transition-colors hover:bg-muted/30">
+      <div className="group flex flex-col gap-3 py-4 text-sm transition-colors hover:bg-muted/30">
         <div className="flex items-start justify-between">
           <div className="relative">
             <div className="flex size-10 items-center justify-center border border-border bg-secondary text-sm font-semibold text-secondary-foreground">
@@ -229,7 +228,7 @@ const MemberCard = ({
           minutesUntilAvailable={minutesUntilAvailable}
           pendingInvite={pendingInvite}
         />
-      </Card>
+      </div>
 
       {canEdit && (
         <EditMemberDialog
