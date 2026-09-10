@@ -1,49 +1,82 @@
 "use client";
 
 import { Button } from "@repo/ui/components/button";
+import { toast } from "@repo/ui/components/sonner";
 import { captureException } from "@sentry/nextjs";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { acceptInvitation } from "@/lib/actions/invitation-actions";
+import { acceptInvitation, declineInvitation } from "@/lib/actions/invitation-actions";
 
-const AcceptWorkspaceInvitation = ({ invitationId }: { invitationId: string }) => {
+const AcceptWorkspaceInvitation = ({
+  invitationId,
+  inviterName,
+  teamName,
+}: {
+  invitationId: string;
+  inviterName?: string;
+  teamName?: string;
+}) => {
   const { refresh } = useRouter();
-  const [pending, setPending] = useState(false);
+  const [action, setAction] = useState<"accept" | "decline" | null>(null);
+  const pending = action !== null;
   const [acceptError, setError] = useState<string | null>(null);
-  const handleAccept = async () => {
-    setPending(true);
+  const handleDecision = async (decision: "accept" | "decline") => {
+    setAction(decision);
     setError(null);
     try {
-      const result = await acceptInvitation(invitationId);
+      const result =
+        decision === "accept"
+          ? await acceptInvitation(invitationId)
+          : await declineInvitation(invitationId);
       if (!result.success) {
         setError(result.error);
+      }
+      if (result.success) {
+        toast.success(decision === "accept" ? "Invitation accepted" : "Invitation declined");
       }
       refresh();
     } catch (error) {
       captureException(error);
-      setError("Couldn't accept the invitation. Please try again.");
+      setError("Couldn't update the invitation. Please try again.");
     } finally {
-      setPending(false);
+      setAction(null);
     }
   };
   return (
-    <div className="flex flex-col gap-4 border-y border-border py-6">
-      <p className="font-medium">You&apos;ve been invited to this workspace</p>
+    <div className="flex flex-col gap-4">
+      <p className="font-medium">
+        You&apos;ve been invited to{" "}
+        {teamName === undefined || teamName === "" ? "this workspace" : teamName}
+      </p>
+      {inviterName !== undefined && inviterName !== "" && (
+        <p className="text-sm text-muted-foreground">Invited by {inviterName}</p>
+      )}
       {acceptError !== null && (
         <p className="text-sm text-destructive" role="alert">
           {acceptError}
         </p>
       )}
-      <Button
-        className="self-start"
-        disabled={pending}
-        onClick={() => {
-          void handleAccept();
-        }}
-      >
-        {pending ? "Accepting…" : "Accept invitation"}
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          className="self-start"
+          disabled={pending}
+          onClick={() => {
+            void handleDecision("accept");
+          }}
+        >
+          {action === "accept" ? "Accepting…" : "Accept invitation"}
+        </Button>
+        <Button
+          disabled={pending}
+          onClick={() => {
+            void handleDecision("decline");
+          }}
+          variant="outline"
+        >
+          {action === "decline" ? "Declining…" : "Decline"}
+        </Button>
+      </div>
     </div>
   );
 };

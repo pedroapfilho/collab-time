@@ -10,65 +10,88 @@ import Link from "next/link";
 import { AcceptWorkspaceInvitation } from "@/components/accept-workspace-invitation";
 import type { TeamStatus } from "@/types";
 
-type JoinPromptProps = {
+import { InviteMismatchNotice } from "./invite-mismatch-notice";
+
+export type JoinPromptProps = {
   invitationId?: string;
+  inviteMismatch?: { invitedEmailMasked: string };
+  inviterName?: string;
   isAuthenticated: boolean;
   isRequestingJoin: boolean;
   onRequestJoin: () => void;
+  returnTo: string;
   teamId: string;
+  teamName?: string;
   teamStatus: TeamStatus;
 };
 
 const JoinPrompt = ({
   invitationId,
+  inviteMismatch,
+  inviterName,
   isAuthenticated,
   isRequestingJoin,
   onRequestJoin,
-  teamId,
+  returnTo,
+  teamName,
   teamStatus,
 }: JoinPromptProps) => {
   if (!isAuthenticated) {
     return (
-      <div className="flex items-center justify-between rounded-xl border border-border bg-muted/50 px-4 py-3">
-        <p className="text-sm text-muted-foreground">Sign in to request access</p>
-        <Link
-          className={cn(buttonVariants({ size: "sm", variant: "outline" }))}
-          href={`/login?redirect=/${teamId}`}
-        >
-          <LogIn className="mr-2 size-4" />
-          Sign in
-        </Link>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/50 px-4 py-3">
+        <p className="text-sm text-muted-foreground">Join this workspace</p>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            className={cn(buttonVariants({ size: "sm" }))}
+            href={`/signup?redirect=${encodeURIComponent(returnTo)}`}
+          >
+            Create account
+          </Link>
+          <Link
+            className={cn(buttonVariants({ size: "sm", variant: "outline" }))}
+            href={`/login?redirect=${encodeURIComponent(returnTo)}`}
+          >
+            <LogIn className="mr-2 size-4" />
+            Sign in
+          </Link>
+        </div>
       </div>
     );
   }
 
   if (teamStatus === "INVITED" && invitationId !== undefined) {
-    return <AcceptWorkspaceInvitation invitationId={invitationId} />;
-  }
-
-  if (teamStatus === "PENDING") {
     return (
-      <div className="flex items-center justify-between rounded-xl border border-border bg-muted/50 px-4 py-3">
-        <p className="text-sm text-muted-foreground">
-          Your join request is pending admin approval.
-        </p>
+      <div className="border-y border-border py-6">
+        <AcceptWorkspaceInvitation
+          invitationId={invitationId}
+          inviterName={inviterName}
+          teamName={teamName}
+        />
       </div>
     );
   }
 
   return (
-    <div className="flex items-center justify-between rounded-xl border border-border bg-muted/50 px-4 py-3">
-      <p className="text-sm text-muted-foreground">Request access to edit this team</p>
-      <Button disabled={isRequestingJoin} onClick={onRequestJoin} size="sm" variant="outline">
-        {isRequestingJoin ? (
-          <Spinner className="mr-2 size-4" />
-        ) : (
-          <UserPlus className="mr-2 size-4" />
+    <div className="flex flex-col gap-3">
+      {inviteMismatch && <InviteMismatchNotice {...inviteMismatch} returnTo={returnTo} />}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-y border-border py-4">
+        <p className="text-sm text-muted-foreground">
+          {teamStatus === "PENDING"
+            ? "Your join request is pending admin approval."
+            : "Request access to edit this team"}
+        </p>
+        {teamStatus !== "PENDING" && (
+          <Button disabled={isRequestingJoin} onClick={onRequestJoin} size="sm" variant="outline">
+            {isRequestingJoin ? (
+              <Spinner className="mr-2 size-4" />
+            ) : (
+              <UserPlus className="mr-2 size-4" />
+            )}
+            Request to Join
+          </Button>
         )}
-        Request to Join
-      </Button>
+      </div>
     </div>
   );
 };
-
 export { JoinPrompt };

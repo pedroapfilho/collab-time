@@ -11,6 +11,7 @@ import { queryKeys } from "@/lib/query-keys";
 import type { PendingInvitation } from "@/types";
 
 const InvitationSchema = z.object({
+  expiresAt: z.string().nullable(),
   id: z.string(),
   inviterName: z.string(),
   memberId: z.string(),

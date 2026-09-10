@@ -18,6 +18,8 @@ import { useState, useTransition } from "react";
 import { EditMemberDialog } from "@/components/edit-member-dialog";
 import { teamQueryKeys } from "@/hooks/use-team-query";
 import { removeMember } from "@/lib/actions/member-actions";
+import { formatExpiresIn } from "@/lib/invitation-expiry";
+import { queryKeys } from "@/lib/query-keys";
 import {
   formatTimezoneLabel,
   isCurrentlyWorking,
@@ -26,14 +28,15 @@ import {
 } from "@/lib/timezones";
 import { useHalfMinuteTick } from "@/lib/use-tick";
 import { formatHour } from "@/lib/utils";
-import type { TeamGroup, TeamMember } from "@/types";
+import type { PendingTeamInvitation, TeamGroup, TeamMember } from "@/types";
 
-type MemberCardProps = {
+export type MemberCardProps = {
   canEdit: boolean;
   currentUserId?: string;
   groups: Array<TeamGroup>;
   hasClaimedProfile: boolean;
   member: TeamMember;
+  pendingInvite?: PendingTeamInvitation;
   teamId: string;
 };
 
@@ -43,7 +46,8 @@ const MemberDetails = ({
   isOwnProfile,
   member,
   minutesUntilAvailable,
-}: Pick<MemberCardProps, "groups" | "member"> & {
+  pendingInvite,
+}: Pick<MemberCardProps, "groups" | "member" | "pendingInvite"> & {
   isAvailable: boolean;
   isOwnProfile: boolean;
   minutesUntilAvailable: number;
@@ -75,6 +79,26 @@ const MemberDetails = ({
       </div>
 
       <div className="flex flex-wrap gap-1.5">
+        {(member.userId === undefined || member.userId === "") &&
+          pendingInvite &&
+          formatExpiresIn(pendingInvite.expiresAt) !== "Expired" && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <button
+                      aria-label={`Invitation sent to ${pendingInvite.email}`}
+                      className="cursor-help"
+                      type="button"
+                    />
+                  }
+                >
+                  <Badge variant="info">Invited</Badge>
+                </TooltipTrigger>
+                <TooltipContent>{pendingInvite.email}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         {isAvailable ? (
           <Badge variant="success">Available</Badge>
         ) : (
@@ -105,6 +129,7 @@ const MemberCard = ({
   groups,
   hasClaimedProfile,
   member,
+  pendingInvite,
   teamId,
 }: MemberCardProps) => {
   const queryClient = useQueryClient();
@@ -135,6 +160,7 @@ const MemberCard = ({
       const result = await removeMember(teamId, member.id);
       if (result.success) {
         void queryClient.invalidateQueries({ queryKey: teamQueryKeys.team(teamId) });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.teamInvitations(teamId) });
       } else {
         toast.error(result.error);
       }
@@ -201,6 +227,7 @@ const MemberCard = ({
           isOwnProfile={isOwnProfile}
           member={member}
           minutesUntilAvailable={minutesUntilAvailable}
+          pendingInvite={pendingInvite}
         />
       </Card>
 
@@ -210,6 +237,7 @@ const MemberCard = ({
           member={member}
           onOpenChange={setIsEditDialogOpen}
           open={isEditDialogOpen}
+          pendingInvite={pendingInvite}
           teamId={teamId}
         />
       )}

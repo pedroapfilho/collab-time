@@ -10,7 +10,6 @@ import { AddGroupDialog } from "@/components/add-group-dialog";
 import { AddMemberDialog } from "@/components/add-member-dialog";
 import { DeleteWorkspaceDialog } from "@/components/delete-workspace-dialog";
 import { ImportMembersDialog } from "@/components/import-members-dialog";
-import { JoinRequestsPanel } from "@/components/join-requests-panel";
 import { Nav } from "@/components/nav";
 import {
   SectionCard,
@@ -28,8 +27,8 @@ import { useTeamMutation, useTeamQuery } from "@/hooks/use-team-query";
 import type { TeamStatus } from "@/types";
 
 import { GroupsGrid } from "./client/groups-grid";
-import { JoinPrompt } from "./client/join-prompt";
 import { MembersGrid } from "./client/members-grid";
+import { MembershipActions } from "./client/membership-actions";
 import { useCollapsedGroups } from "./client/use-collapsed-groups";
 import { useDragEnd } from "./client/use-drag-end";
 import { useTeamMembership } from "./client/use-team-membership";
@@ -48,44 +47,27 @@ const DndWrapper = dynamic(
 type TeamPageClientProps = {
   hasPassword?: boolean;
   invitationId?: string;
+  inviteMismatch?: { invitedEmailMasked: string };
+  inviterName?: string;
   isArchived: boolean;
   isAuthenticated: boolean;
   isPrivate: boolean;
+  returnTo: string;
   spaceId: string | null;
   teamId: string;
   teamStatus: TeamStatus;
   userId?: string;
 };
 
-type MembershipActionsProps = {
-  invitationId?: string;
-  isAdmin: boolean;
-  isAuthenticated: boolean;
-  isMember: boolean;
-  isRequestingJoin: boolean;
-  onRequestJoin: () => void;
-  teamId: string;
-  teamStatus: TeamStatus;
-};
-
-const MembershipActions = ({ isAdmin, isMember, ...props }: MembershipActionsProps) => {
-  if (isAdmin) {
-    return <JoinRequestsPanel teamId={props.teamId} />;
-  }
-  if (isMember) {
-    return (
-      <p className="text-center text-sm text-muted-foreground">You are a member of this team</p>
-    );
-  }
-  return <JoinPrompt {...props} />;
-};
-
 const TeamPageClient = ({
   hasPassword = false,
   invitationId,
+  inviteMismatch,
+  inviterName,
   isArchived,
   isAuthenticated,
   isPrivate,
+  returnTo,
   spaceId,
   teamId,
   teamStatus: initialStatus,
@@ -221,15 +203,21 @@ const TeamPageClient = ({
               />
 
               <MembershipActions
+                hasClaimedProfile={hasClaimedProfile}
                 invitationId={invitationId}
+                inviteMismatch={inviteMismatch}
+                inviterName={inviterName}
                 isAdmin={isAdmin}
                 isAuthenticated={isAuthenticated}
                 isMember={isMember}
                 isRequestingJoin={isRequestingJoin}
+                members={members}
                 onRequestJoin={() => {
                   void handleRequestJoin();
                 }}
+                returnTo={returnTo}
                 teamId={teamId}
+                teamName={teamName}
                 teamStatus={teamStatus}
               />
             </SectionCardContent>

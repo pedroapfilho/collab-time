@@ -7,7 +7,7 @@ import { useState } from "react";
 
 import { signOut } from "@/lib/auth-client";
 
-const useSignOut = () => {
+const useSignOut = ({ redirectTo = "/" }: { redirectTo?: string } = {}) => {
   const { push, refresh } = useRouter();
   const [isSigningOut, setIsSigningOut] = useState(false);
 
@@ -26,7 +26,7 @@ const useSignOut = () => {
           },
           onSuccess: () => {
             toast.success("Signed out successfully");
-            push("/");
+            push(redirectTo);
             refresh();
           },
         },

@@ -4,18 +4,9 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
 import { MemberCard } from "@/components/member-card";
-import type { TeamGroup, TeamMember } from "@/types";
+import type { MemberCardProps } from "@/components/member-card";
 
-type SortableMemberCardProps = {
-  canEdit: boolean;
-  currentUserId?: string;
-  groups: Array<TeamGroup>;
-  hasClaimedProfile: boolean;
-  member: TeamMember;
-  teamId: string;
-};
-
-const SortableMemberCard = (props: SortableMemberCardProps) => {
+const SortableMemberCard = (props: MemberCardProps) => {
   const { attributes, isDragging, listeners, setNodeRef, transform, transition } = useSortable({
     id: props.member.id,
   });

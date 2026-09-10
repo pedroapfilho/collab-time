@@ -1,40 +1,13 @@
 "use client";
 
-import { toast } from "@repo/ui/components/sonner";
-import { Spinner } from "@repo/ui/components/spinner";
-import { captureException } from "@sentry/nextjs";
-import { ArrowRight } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-
+import { CreateWorkspaceDialog } from "@/components/create-workspace-dialog";
 import { Nav } from "@/components/nav";
-import { createTeam } from "@/lib/actions/team-create";
-import { getUserTimezone } from "@/lib/timezones";
 
 type HomeShellProps = {
   children: React.ReactNode;
 };
 
 const HomeShell = ({ children }: HomeShellProps) => {
-  const { push } = useRouter();
-  const [isCreating, setIsCreating] = useState(false);
-
-  const handleCreateTeam = async () => {
-    setIsCreating(true);
-    try {
-      const result = await createTeam(getUserTimezone());
-      if (result.success) {
-        push(`/${result.data}`);
-      } else {
-        toast.error(result.error);
-      }
-    } catch (error) {
-      captureException(error);
-      toast.error("Failed to create team. Please try again.");
-    }
-    setIsCreating(false);
-  };
-
   return (
     <div className="flex flex-1 flex-col">
       <Nav isAuthenticated />
@@ -52,26 +25,7 @@ const HomeShell = ({ children }: HomeShellProps) => {
               Open a team to read the shared day, or create a new workspace.
             </p>
           </div>
-          <button
-            className="group flex h-12 w-full items-center justify-center gap-2 bg-primary px-6 text-base font-semibold text-primary-foreground hover:bg-primary/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-            disabled={isCreating}
-            onClick={() => {
-              void handleCreateTeam();
-            }}
-            type="button"
-          >
-            {isCreating ? (
-              <>
-                <Spinner className="size-5 shrink-0 text-primary-foreground" />
-                Creating workspace…
-              </>
-            ) : (
-              <>
-                Create a workspace
-                <ArrowRight className="size-5 shrink-0" />
-              </>
-            )}
-          </button>
+          <CreateWorkspaceDialog />
         </div>
         {children}
       </main>

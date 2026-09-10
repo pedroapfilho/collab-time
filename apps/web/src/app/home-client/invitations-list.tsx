@@ -5,6 +5,7 @@ import { Spinner } from "@repo/ui/components/spinner";
 import { Check, X } from "lucide-react";
 import { AnimatePresence, m } from "motion/react";
 
+import { formatExpiresIn } from "@/lib/invitation-expiry";
 import type { PendingInvitation } from "@/types";
 
 type InvitationsListProps = {
@@ -54,6 +55,8 @@ const InvitationsList = ({ invitations, isPending, onAccept, onDecline }: Invita
                       </span>
                       <span className="text-xs text-muted-foreground">
                         Invited by {invitation.inviterName}
+                        {invitation.expiresAt !== null &&
+                          ` · ${formatExpiresIn(invitation.expiresAt)}`}
                       </span>
                     </div>
                   </div>

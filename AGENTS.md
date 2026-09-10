@@ -136,13 +136,13 @@ All under `apps/web/src/app/api/`:
 - `auth/[...all]`: Better Auth catch-all
 - `spaces/` and `spaces/[spaceId]/`: Space CRUD, password verification
 - `teams/`: the caller's teams, plus `teams/[teamId]/membership` for archive toggling and `teams/[teamId]/events` for authorized SSE notifications
-- `invitations/`: the caller's pending invitations
+- `invitations/`: the caller's pending, unexpired invitations (`expiresAt: null` preserves legacy invitations). Admin invitation management uses server actions; expired pending invitations remain visible there for Resend/Revoke.
 
 ## Data model
 
 `User` -> `Session`, `Account`, `Space` (owned), `Membership`, `JoinRequest`, `Invitation` (sent). Plus `Verification` for auth tokens and `RateLimit`.
 
-Enums: `MemberRole` (ADMIN | MEMBER), `JoinRequestStatus`, `InvitationStatus`.
+Enums: `MemberRole` (ADMIN | MEMBER), `JoinRequestStatus`, `InvitationStatus` (PENDING | ACCEPTED | DECLINED | REVOKED). Invitations expire after 14 days, remain email-bound, and use `/{teamId}?invite=<cuid>` links as contextual hints. Invite and resend share limits of 50/user/hour and 200/team/day.
 
 Spaces link to teams via a unique `teamId` and support private access through `isPrivate` + `accessPassword`. A public space is readable by anyone with the link, with no session at all: see the guest path in `apps/web/src/app/[teamId]/page.tsx`.
 
