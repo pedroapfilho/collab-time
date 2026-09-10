@@ -7,7 +7,7 @@ type LoadErrorRowProps = {
 
 const LoadErrorRow = ({ label, onRetry }: LoadErrorRowProps) => (
   <div
-    className="flex min-h-24 items-center justify-between gap-4 border-b border-border py-5"
+    className="flex min-h-24 items-center justify-between gap-4 border-t border-border pt-5"
     role="alert"
   >
     <div className="flex flex-col gap-1">

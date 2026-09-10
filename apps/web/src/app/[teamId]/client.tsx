@@ -186,7 +186,7 @@ const TeamPageClient = ({
 
         {members.length > 0 && (
           <SectionCard>
-            <SectionCardHeader bordered>
+            <SectionCardHeader>
               <SectionCardTitle description="Times shown in your local timezone" icon={Clock}>
                 Working hours
               </SectionCardTitle>
@@ -234,7 +234,7 @@ const TeamPageClient = ({
               />
             </SectionCardContent>
             {isAdmin && (
-              <SectionCardFooter bordered className="justify-end">
+              <SectionCardFooter className="justify-end">
                 <ImportMembersDialog teamId={teamId} />
                 <AddMemberDialog
                   groups={groups}
@@ -260,7 +260,7 @@ const TeamPageClient = ({
               />
             </SectionCardContent>
             {isAdmin && (
-              <SectionCardFooter bordered className="justify-end">
+              <SectionCardFooter className="justify-end">
                 <AddGroupDialog teamId={teamId} />
               </SectionCardFooter>
             )}

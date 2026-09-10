@@ -2,7 +2,6 @@
 
 import { Badge } from "@repo/ui/components/badge";
 import { Button } from "@repo/ui/components/button";
-import { Card } from "@repo/ui/components/card";
 import { Input } from "@repo/ui/components/input";
 import { toast } from "@repo/ui/components/sonner";
 import { Spinner } from "@repo/ui/components/spinner";
@@ -123,9 +122,9 @@ const GroupCard = ({
   );
 
   return (
-    <Card
+    <div
       className={cn(
-        "group h-full gap-3 border-x-0 border-t-0 px-0 py-4 transition-colors hover:bg-muted/30",
+        "group flex flex-col gap-3 py-4 text-sm transition-colors hover:bg-muted/30",
         isDropTarget && "outline-2 -outline-offset-1 outline-foreground",
       )}
     >
@@ -159,7 +158,7 @@ const GroupCard = ({
           </Badge>
         </div>
       </div>
-    </Card>
+    </div>
   );
 };
 
