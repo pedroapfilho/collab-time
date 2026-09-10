@@ -2,13 +2,9 @@ import { prisma } from "@repo/db";
 
 import { readTeamSummaries } from "@/lib/team-store";
 
-const displayName = (name: string | null, email: string): string => {
-  if (name !== null && name !== "") {
-    return name;
-  }
-  const localPart = email.split("@")[0];
-  return localPart !== undefined && localPart !== "" ? localPart : "Someone";
-};
+import { displayName } from "./display-name";
+import { openInvitationWhere } from "./invitations";
+import { normalizeEmail } from "./validation";
 
 const getMyTeams = async (userId: string) => {
   const memberships = await prisma.membership.findMany({
@@ -58,18 +54,19 @@ const getPendingInvitations = async (email: string) => {
   const invitations = await prisma.invitation.findMany({
     include: { invitedBy: { select: { email: true, name: true } } },
     orderBy: { createdAt: "desc" },
-    where: { email, status: "PENDING" },
+    where: { email: normalizeEmail(email), ...openInvitationWhere(new Date()) },
   });
   const summaries = await readTeamSummaries(invitations.map((invitation) => invitation.teamId));
 
   return invitations.map((invitation) => {
     const name = summaries.get(invitation.teamId)?.name ?? "";
     return {
+      expiresAt: invitation.expiresAt?.toISOString() ?? null,
       id: invitation.id,
       inviterName: displayName(invitation.invitedBy.name, invitation.invitedBy.email),
       memberId: invitation.memberId,
       teamId: invitation.teamId,
-      teamName: name === "" ? "Unknown Team" : name,
+      teamName: name === "" ? "Untitled workspace" : name,
     };
   });
 };

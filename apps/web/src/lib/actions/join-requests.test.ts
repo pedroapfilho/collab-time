@@ -6,7 +6,9 @@ import { createMockSession, VALID_UUID } from "./test-helpers";
 
 type JoinRequestDeps = Parameters<typeof createJoinRequestActions>[0];
 
-const addTeamMember = vi.fn<JoinRequestDeps["addTeamMember"]>();
+const ensureMemberSlot = vi.fn<JoinRequestDeps["ensureMemberSlot"]>();
+const notifyAdmins = vi.fn<JoinRequestDeps["notifyAdmins"]>();
+const notifyRequester = vi.fn<JoinRequestDeps["notifyRequester"]>();
 const approveMembership = vi.fn<JoinRequestDeps["approveMembership"]>();
 const denyRequest = vi.fn<JoinRequestDeps["denyRequest"]>();
 const findRequest = vi.fn<JoinRequestDeps["findRequest"]>();
@@ -18,12 +20,14 @@ const requireTeamAdmin = vi.fn<JoinRequestDeps["requireTeamAdmin"]>();
 const upsertRequest = vi.fn<JoinRequestDeps["upsertRequest"]>();
 const { approveJoinRequest, denyJoinRequest, getPendingJoinRequests, requestToJoin } =
   createJoinRequestActions({
-    addTeamMember,
     approveMembership,
     denyRequest,
+    ensureMemberSlot,
     findRequest,
     listPending,
     loadJoinContext,
+    notifyAdmins,
+    notifyRequester,
     reportError,
     requireAuth,
     requireTeamAdmin,
@@ -40,7 +44,7 @@ const pendingRequest = {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  addTeamMember.mockResolvedValue({ memberId: "member-1", ok: true });
+  ensureMemberSlot.mockResolvedValue({ created: true, memberId: "member-1", ok: true });
   approveMembership.mockResolvedValue();
   denyRequest.mockResolvedValue();
   findRequest.mockResolvedValue(pendingRequest);
@@ -98,6 +102,10 @@ describe("requestToJoin", () => {
       success: true,
     });
     expect(upsertRequest).toHaveBeenCalledWith(VALID_UUID, "user-123");
+    expect(notifyAdmins).toHaveBeenCalledWith(
+      VALID_UUID,
+      expect.objectContaining({ email: "test@example.com" }),
+    );
   });
 });
 
@@ -128,24 +136,38 @@ describe("approveJoinRequest", () => {
     expect(result).toEqual({ data: { memberId: "member-1" }, success: true });
   });
 
-  it("persists the member after approval", async () => {
+  it("persists the member before approval", async () => {
     await approveJoinRequest("jr-1");
 
-    expect(addTeamMember).toHaveBeenCalledWith(VALID_UUID, "user-456", "Bob");
+    expect(ensureMemberSlot).toHaveBeenCalledWith(VALID_UUID, "user-456", "Bob");
+    expect(ensureMemberSlot.mock.invocationCallOrder[0]).toBeLessThan(
+      approveMembership.mock.invocationCallOrder[0],
+    );
+    expect(notifyRequester).toHaveBeenCalledWith(pendingRequest, "approved");
   });
 
   it("reports a failed member write", async () => {
-    addTeamMember.mockResolvedValue({ ok: false, reason: "write-failed" });
+    ensureMemberSlot.mockResolvedValue({
+      error: "Failed to save the team",
+      ok: false,
+      reason: "write-failed",
+    });
 
     const result = await approveJoinRequest("jr-1");
     expect(result.success).toBe(false);
+    expect(approveMembership).not.toHaveBeenCalled();
+    expect(notifyRequester).not.toHaveBeenCalled();
   });
 
   it("distinguishes an unreachable team", async () => {
-    addTeamMember.mockResolvedValue({ ok: false, reason: "read-failed" });
+    ensureMemberSlot.mockResolvedValue({
+      error: "Could not read the team",
+      ok: false,
+      reason: "read-failed",
+    });
 
     expect(await approveJoinRequest("jr-1")).toEqual({
-      error: "The request was approved, but the team could not be reached. Try again in a moment.",
+      error: "Could not read the team",
       success: false,
     });
   });
@@ -164,6 +186,7 @@ describe("denyJoinRequest", () => {
   it("updates a pending request to denied", async () => {
     expect(await denyJoinRequest("jr-1")).toEqual({ data: undefined, success: true });
     expect(denyRequest).toHaveBeenCalledWith("jr-1");
+    expect(notifyRequester).toHaveBeenCalledWith(pendingRequest, "denied");
   });
 });
 

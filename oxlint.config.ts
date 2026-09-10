@@ -11,6 +11,7 @@ export default defineConfig({
         "apps/web/src/app/home-client/lists.test.tsx",
         "apps/web/src/components/accept-workspace-invitation.test.tsx",
         "apps/web/src/app/og/route.test.tsx",
+        "apps/web/src/app/(auth)/auth-gate.test.tsx",
       ],
       rules: { "anti-slop/no-module-mocking": "off" },
     },
@@ -79,7 +80,11 @@ export default defineConfig({
       },
     },
     {
-      files: ["apps/web/src/lib/actions/join-requests.ts"],
+      // These server exports delegate authorization to their tested action cores.
+      files: [
+        "apps/web/src/lib/actions/join-requests.ts",
+        "apps/web/src/lib/actions/invitation-actions.ts",
+      ],
       rules: {
         "react-doctor/server-auth-actions": "off",
       },

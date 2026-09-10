@@ -37,22 +37,35 @@ describe("createTeam", () => {
     storeTeam.mockResolvedValue({ ok: true });
   });
 
+  it.each(["", "   ", "a".repeat(101)])(
+    "rejects invalid workspace names without writes: %s",
+    async (name) => {
+      expect(await createTeam(TEST_TIMEZONE, name)).toMatchObject({ success: false });
+      expect(createTeamRecords).not.toHaveBeenCalled();
+      expect(storeTeam).not.toHaveBeenCalled();
+    },
+  );
+  it("stores a trimmed name", async () => {
+    await createTeam(TEST_TIMEZONE, "  Platform team  ");
+    expect(storeTeam.mock.calls[0][1].name).toBe("Platform team");
+  });
+
   it("returns error when not authenticated", async () => {
     requireAuth.mockRejectedValue(new Error("Unauthorized"));
 
-    const result = await createTeam(TEST_TIMEZONE);
+    const result = await createTeam(TEST_TIMEZONE, "My workspace");
 
     expect(result).toEqual({ error: "Failed to create team", success: false });
   });
 
   it("creates space and membership in a transaction", async () => {
-    await createTeam(TEST_TIMEZONE);
+    await createTeam(TEST_TIMEZONE, "My workspace");
 
     expect(createTeamRecords).toHaveBeenCalledWith("user-123", "test-uuid-0");
   });
 
   it("populates redis cache with creator as first member", async () => {
-    await createTeam(TEST_TIMEZONE);
+    await createTeam(TEST_TIMEZONE, "My workspace");
 
     const storedTeam = storeTeam.mock.calls[0][1];
 
@@ -70,7 +83,7 @@ describe("createTeam", () => {
   it("does not report success when the team-contents write fails", async () => {
     storeTeam.mockResolvedValue({ ok: false, reason: "write-failed" });
 
-    const result = await createTeam(TEST_TIMEZONE);
+    const result = await createTeam(TEST_TIMEZONE, "My workspace");
 
     expect(result).toEqual({ error: "Failed to create team", success: false });
     expect(reportError).toHaveBeenCalledWith(
@@ -85,7 +98,7 @@ describe("createTeam", () => {
   it("rolls back the Space row when the team-contents write fails", async () => {
     storeTeam.mockResolvedValue({ ok: false, reason: "write-failed" });
 
-    await createTeam(TEST_TIMEZONE);
+    await createTeam(TEST_TIMEZONE, "My workspace");
 
     expect(deleteSpace).toHaveBeenCalledWith("test-uuid-0");
   });
@@ -94,7 +107,7 @@ describe("createTeam", () => {
     storeTeam.mockResolvedValue({ ok: false, reason: "write-failed" });
     deleteSpace.mockRejectedValue(new Error("Postgres down"));
 
-    const result = await createTeam(TEST_TIMEZONE);
+    const result = await createTeam(TEST_TIMEZONE, "My workspace");
 
     expect(result).toEqual({ error: "Failed to create team", success: false });
     expect(reportError).toHaveBeenCalledWith(
@@ -106,27 +119,27 @@ describe("createTeam", () => {
   });
 
   it("keeps the Space row when the team is created", async () => {
-    await createTeam(TEST_TIMEZONE);
+    await createTeam(TEST_TIMEZONE, "My workspace");
 
     expect(deleteSpace).not.toHaveBeenCalled();
   });
 
   it("returns the generated teamId on success", async () => {
-    const result = await createTeam(TEST_TIMEZONE);
+    const result = await createTeam(TEST_TIMEZONE, "My workspace");
 
     expect(result).toEqual({ data: "test-uuid-0", success: true });
   });
 
   it("allows the 50th administered workspace", async () => {
     countAdminTeams.mockResolvedValue(49);
-    const result = await createTeam(TEST_TIMEZONE);
+    const result = await createTeam(TEST_TIMEZONE, "My workspace");
     expect(result.success).toBe(true);
     expect(countAdminTeams).toHaveBeenCalledWith("user-123");
   });
 
   it("rejects the 51st administered workspace before writing", async () => {
     countAdminTeams.mockResolvedValue(50);
-    const result = await createTeam(TEST_TIMEZONE);
+    const result = await createTeam(TEST_TIMEZONE, "My workspace");
     expect(result).toEqual({ error: "You can administer up to 50 workspaces", success: false });
     expect(createTeamRecords).not.toHaveBeenCalled();
     expect(storeTeam).not.toHaveBeenCalled();

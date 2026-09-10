@@ -16,9 +16,13 @@ type MemberActionDeps = Parameters<typeof createMemberActions>[0];
 const testMutator = createTestTeamMutator();
 const requireAuth = vi.fn<MemberActionDeps["requireAuth"]>();
 const requireTeamMember = vi.fn<MemberActionDeps["requireTeamMember"]>();
+const claimOrCreateSlot = vi.fn<MemberActionDeps["claimOrCreateSlot"]>();
+const revokeInvitationsForMember = vi.fn<MemberActionDeps["revokeInvitationsForMember"]>();
+const removeMembershipForSlot = vi.fn<MemberActionDeps["removeMembershipForSlot"]>();
 const reportError = vi.fn<MemberActionDeps["reportError"]>();
 const {
   addMember,
+  createOwnMemberSlot,
   importMembers,
   removeMember,
   reorderMembers,
@@ -26,11 +30,15 @@ const {
   updateOwnMember,
   updateTeamName,
 } = createMemberActions({
+  claimOrCreateSlot,
   createId: () => "test-uuid",
   mutateTeam: testMutator.mutateTeam,
+  readTeam: () => Promise.resolve(testMutator.persistedTeam()),
+  removeMembershipForSlot,
   reportError,
   requireAuth,
   requireTeamMember,
+  revokeInvitationsForMember,
 });
 
 const seedTeam = (team: ReturnType<typeof createTestTeamRecord>) => {
@@ -56,6 +64,10 @@ const validMemberInput = {
 beforeEach(() => {
   testMutator.reset();
   requireAuth.mockReset();
+  requireAuth.mockResolvedValue(createMockSession());
+  claimOrCreateSlot.mockReset();
+  revokeInvitationsForMember.mockReset();
+  removeMembershipForSlot.mockReset();
   requireTeamMember.mockReset();
   reportError.mockReset();
 });
@@ -158,7 +170,7 @@ describe("updateMember", () => {
 });
 
 describe("updateTeamName", () => {
-  it("trims and slices name", async () => {
+  it("trims name", async () => {
     seedTeam(createTestTeamRecord());
 
     await updateTeamName(VALID_UUID, "  My Team  ");
@@ -169,16 +181,16 @@ describe("updateTeamName", () => {
   it("rejects empty name after trimming", async () => {
     const result = await updateTeamName(VALID_UUID, "   ");
 
-    expect(result).toEqual({ error: "Team name cannot be empty", success: false });
+    expect(result).toEqual({ error: "Workspace name is required", success: false });
   });
 
-  it("truncates name to 100 characters", async () => {
+  it("rejects names longer than 100 characters", async () => {
     seedTeam(createTestTeamRecord());
     const longName = "A".repeat(150);
 
-    await updateTeamName(VALID_UUID, longName);
-
-    expect(persistedTeam().name.length).toBe(100);
+    const result = await updateTeamName(VALID_UUID, longName);
+    expect(result.success).toBe(false);
+    expect(persistedTeam().name).toBe("Test Team");
   });
 });
 
@@ -421,5 +433,63 @@ describe("member limits", () => {
     const result3 = await importMembers(VALID_UUID, [validMemberInput]);
     expect(result3.success).toBe(true);
     expect(persistedTeam().members).toHaveLength(200);
+  });
+});
+
+describe("removal cleanup and self repair", () => {
+  it("keeps the slot when revocation fails and can retry", async () => {
+    seedTeam(
+      createTestTeamRecord({ members: [createTestMember({ id: VALID_UUID_2, userId: "other" })] }),
+    );
+    revokeInvitationsForMember.mockRejectedValueOnce(new Error("Database unavailable"));
+    expect(await removeMember(VALID_UUID, VALID_UUID_2)).toMatchObject({ success: false });
+    expect(persistedTeam().members).toHaveLength(1);
+    expect(removeMembershipForSlot).not.toHaveBeenCalled();
+    expect(await removeMember(VALID_UUID, VALID_UUID_2)).toMatchObject({ success: true });
+    expect(removeMembershipForSlot).toHaveBeenCalledWith(VALID_UUID, "other", "user-123");
+  });
+  it("retains the slot until membership cleanup succeeds", async () => {
+    seedTeam(
+      createTestTeamRecord({ members: [createTestMember({ id: VALID_UUID_2, userId: "other" })] }),
+    );
+    removeMembershipForSlot.mockImplementationOnce(() => {
+      expect(persistedTeam().members).toHaveLength(1);
+      return Promise.reject(new Error("Database unavailable"));
+    });
+    expect(await removeMember(VALID_UUID, VALID_UUID_2)).toMatchObject({ success: false });
+    expect(persistedTeam().members).toHaveLength(1);
+    expect(revokeInvitationsForMember).toHaveBeenCalledWith(VALID_UUID, VALID_UUID_2);
+  });
+  it("retains a profile claimed by another user during cleanup", async () => {
+    seedTeam(
+      createTestTeamRecord({ members: [createTestMember({ id: VALID_UUID_2, userId: "other" })] }),
+    );
+    removeMembershipForSlot.mockImplementationOnce(() => {
+      persistedTeam().members[0].userId = "new-owner";
+      return Promise.resolve();
+    });
+    expect(await removeMember(VALID_UUID, VALID_UUID_2)).toMatchObject({ success: false });
+    expect(persistedTeam().members[0].userId).toBe("new-owner");
+  });
+  it("does not delete the caller membership", async () => {
+    seedTeam(
+      createTestTeamRecord({
+        members: [createTestMember({ id: VALID_UUID_2, userId: "user-123" })],
+      }),
+    );
+    expect(await removeMember(VALID_UUID, VALID_UUID_2)).toMatchObject({ success: true });
+    expect(removeMembershipForSlot).not.toHaveBeenCalled();
+  });
+  it("requires membership before repairing a profile", async () => {
+    requireTeamMember.mockRejectedValue(new Error("Not a member"));
+    expect(await createOwnMemberSlot(VALID_UUID)).toMatchObject({ success: false });
+    expect(claimOrCreateSlot).not.toHaveBeenCalled();
+  });
+  it("returns an existing profile without creating another", async () => {
+    claimOrCreateSlot.mockResolvedValue({ created: false, memberId: VALID_UUID_2, ok: true });
+    expect(await createOwnMemberSlot(VALID_UUID)).toEqual({
+      data: { created: false, memberId: VALID_UUID_2 },
+      success: true,
+    });
   });
 });

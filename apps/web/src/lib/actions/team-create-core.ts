@@ -3,6 +3,7 @@ import type { TeamMember, TeamRecord } from "@/types";
 
 import { MAX_TEAMS_PER_USER } from "../limits";
 import { TEAM_INITIAL_TTL_SECONDS } from "../redis";
+import { TeamNameSchema } from "../validation";
 
 import type { ActionErrorEvent, ActionResult } from "./types";
 
@@ -23,9 +24,16 @@ type TeamCreateDeps = {
 };
 
 const createTeamAction = (deps: TeamCreateDeps) => {
-  return async (timezone: string): Promise<ActionResult<string>> => {
+  return async (timezone: string, name: string): Promise<ActionResult<string>> => {
     try {
       const session = await deps.requireAuth();
+      const parsed = TeamNameSchema.safeParse(name);
+      if (!parsed.success) {
+        return {
+          error: parsed.error.issues[0]?.message ?? "Invalid workspace name",
+          success: false,
+        };
+      }
       if ((await deps.countAdminTeams(session.user.id)) >= MAX_TEAMS_PER_USER) {
         return {
           error: `You can administer up to ${MAX_TEAMS_PER_USER} workspaces`,
@@ -43,7 +51,7 @@ const createTeamAction = (deps: TeamCreateDeps) => {
         members: [
           deps.createMember({ name: session.user.name ?? "", timezone, userId: session.user.id }),
         ],
-        name: "",
+        name: parsed.data,
       };
       const applied = await deps.storeTeam(teamId, team, TEAM_INITIAL_TTL_SECONDS);
 
