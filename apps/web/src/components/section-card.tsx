@@ -9,28 +9,19 @@ type SectionCardProps = ComponentProps<"section">;
 const SectionCard = ({ className, ...props }: SectionCardProps) => {
   return (
     <section
-      className={cn(
-        "flex flex-col gap-5 border-y border-border bg-transparent py-5 text-card-foreground sm:py-6",
-        className,
-      )}
+      className={cn("flex flex-col gap-5 border-t border-border pt-5 sm:pt-6", className)}
       data-slot="section-card"
       {...props}
     />
   );
 };
 
-type SectionCardHeaderProps = ComponentProps<"div"> & {
-  bordered?: boolean;
-};
+type SectionCardHeaderProps = ComponentProps<"div">;
 
-const SectionCardHeader = ({ bordered, className, ...props }: SectionCardHeaderProps) => {
+const SectionCardHeader = ({ className, ...props }: SectionCardHeaderProps) => {
   return (
     <div
-      className={cn(
-        "flex items-start justify-between gap-3",
-        bordered === true && "border-b pb-4 sm:pb-5",
-        className,
-      )}
+      className={cn("flex items-start justify-between gap-3", className)}
       data-slot="section-card-header"
       {...props}
     />
@@ -74,16 +65,13 @@ const SectionCardContent = ({ className, ...props }: SectionCardContentProps) =>
   return <div className={cn(className)} data-slot="section-card-content" {...props} />;
 };
 
-type SectionCardFooterProps = ComponentProps<"div"> & {
-  bordered?: boolean;
-};
+type SectionCardFooterProps = ComponentProps<"div">;
 
-const SectionCardFooter = ({ bordered, className, ...props }: SectionCardFooterProps) => {
+const SectionCardFooter = ({ className, ...props }: SectionCardFooterProps) => {
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-2",
-        bordered === true && "border-t pt-4 sm:pt-5",
+        "flex flex-wrap items-center gap-2 border-t border-border pt-4 sm:pt-5",
         className,
       )}
       data-slot="section-card-footer"

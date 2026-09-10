@@ -1,5 +1,12 @@
 import { Skeleton } from "@repo/ui/components/skeleton";
 
+import {
+  SectionCard,
+  SectionCardContent,
+  SectionCardFooter,
+  SectionCardHeader,
+} from "@/components/section-card";
+
 const STATUS_GROUPS = ["online", "starting", "wrapping"];
 const TIMELINE_HOURS = Array.from({ length: 12 }, (_, index) => `hour-${index}`);
 const TIMELINE_SECTIONS = [
@@ -84,7 +91,7 @@ const TimelineSkeleton = () => (
 );
 
 const RosterRowSkeleton = ({ group = false }: { group?: boolean }) => (
-  <div className="flex min-h-35 flex-col gap-3 border-b border-border py-4">
+  <div className="flex min-h-35 flex-col gap-3 py-4">
     <div className="flex items-start justify-between">
       <Skeleton className="size-10 rounded-none" />
       <Skeleton className="size-8" />
@@ -106,7 +113,7 @@ const Loading = () => {
   return (
     <div aria-busy="true" className="min-h-dvh w-full px-4 py-6 sm:px-6 lg:px-8 xl:px-12">
       <main className="mx-auto flex w-full max-w-450 flex-col gap-10" id="main">
-        <header className="flex flex-col gap-6 border-b border-border pb-8">
+        <header className="flex flex-col gap-6">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <Skeleton className="size-3.5 rounded-none" />
@@ -123,19 +130,23 @@ const Loading = () => {
           <Skeleton className="h-10 w-64 max-w-full rounded-none sm:h-15 sm:w-96" />
         </header>
 
-        <section className="flex flex-col gap-5 border-y border-border py-5 sm:py-6">
-          <div className="border-b border-border pb-4 sm:pb-5">
+        <SectionCard>
+          <SectionCardHeader>
             <SectionHeadingSkeleton description />
-          </div>
-          <TimelineSkeleton />
-        </section>
+          </SectionCardHeader>
+          <SectionCardContent>
+            <TimelineSkeleton />
+          </SectionCardContent>
+        </SectionCard>
 
-        <section className="flex flex-col gap-5 border-y border-border py-5 sm:py-6">
-          <SectionHeadingSkeleton />
-          <div className="grid gap-x-8 sm:grid-cols-2 lg:grid-cols-3">
+        <SectionCard>
+          <SectionCardHeader>
+            <SectionHeadingSkeleton />
+          </SectionCardHeader>
+          <SectionCardContent className="grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
             {STATUS_GROUPS.map((group, index) => (
               <div
-                className={`flex flex-col gap-2.5 border-t border-border py-3.5 ${
+                className={`flex flex-col gap-2.5 ${
                   index === 2 ? "sm:col-span-2 lg:col-span-1" : ""
                 }`}
                 key={group}
@@ -151,40 +162,40 @@ const Loading = () => {
                 </div>
               </div>
             ))}
-          </div>
-        </section>
+          </SectionCardContent>
+        </SectionCard>
 
         <div className="grid grid-cols-1 items-start gap-10 xl:grid-cols-[1.4fr_0.6fr] [&>*]:min-w-0">
-          <section className="flex flex-col gap-5 border-y border-border py-5 sm:py-6">
-            <div className="flex items-start justify-between gap-3">
+          <SectionCard>
+            <SectionCardHeader>
               <SectionHeadingSkeleton />
               <Skeleton className="h-5 w-7 rounded-full" />
-            </div>
-            <div className="grid grid-cols-1 pr-4">
+            </SectionCardHeader>
+            <SectionCardContent className="grid grid-cols-1 divide-y divide-border pr-4">
               {["member-1", "member-2", "member-3"].map((member) => (
                 <RosterRowSkeleton key={member} />
               ))}
-            </div>
-            <div className="flex items-center justify-end gap-2 border-t border-border pt-4 sm:pt-5">
+            </SectionCardContent>
+            <SectionCardFooter className="justify-end">
               <Skeleton className="h-8 w-32" />
               <Skeleton className="h-8 w-36" />
-            </div>
-          </section>
+            </SectionCardFooter>
+          </SectionCard>
 
-          <section className="flex flex-col gap-5 border-y border-border py-5 sm:py-6">
-            <div className="flex items-start justify-between gap-3">
+          <SectionCard>
+            <SectionCardHeader>
               <SectionHeadingSkeleton />
               <Skeleton className="h-5 w-7 rounded-full" />
-            </div>
-            <div className="grid grid-cols-1 pr-4">
+            </SectionCardHeader>
+            <SectionCardContent className="grid grid-cols-1 divide-y divide-border pr-4">
               {["group-1", "group-2"].map((group) => (
                 <RosterRowSkeleton group key={group} />
               ))}
-            </div>
-            <div className="flex items-center justify-end border-t border-border pt-4 sm:pt-5">
+            </SectionCardContent>
+            <SectionCardFooter className="justify-end">
               <Skeleton className="h-8 w-24" />
-            </div>
-          </section>
+            </SectionCardFooter>
+          </SectionCard>
         </div>
       </main>
     </div>

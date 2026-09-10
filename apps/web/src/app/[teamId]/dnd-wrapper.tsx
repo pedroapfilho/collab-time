@@ -128,7 +128,7 @@ const DndWrapper = ({
       sensors={sensors}
     >
       {children}
-      <DragOverlay dropAnimation={dropAnimation}>
+      <DragOverlay className="bg-background" dropAnimation={dropAnimation}>
         {activeDrag?.kind === "member" && (
           <MemberCard
             canEdit={false}

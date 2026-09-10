@@ -11,6 +11,8 @@ import { Archive, ArrowUpRight, MoreHorizontal, Shield, Trash2 } from "lucide-re
 import { AnimatePresence, m } from "motion/react";
 import Link from "next/link";
 
+import { SectionCard, SectionCardHeader, SectionCardTitle } from "@/components/section-card";
+
 import type { MyTeam, WorkspaceToDelete } from "./types";
 
 type TeamsListProps = {
@@ -34,93 +36,92 @@ const TeamsList = ({ isArchivePending, onArchive, onRequestDelete, teams }: Team
           ease: [0.16, 1, 0.3, 1],
         }}
       >
-        <div className="flex items-center justify-between border-b border-border pb-3">
-          <h2 className="font-display text-sm font-semibold tracking-[0.08em] text-foreground uppercase">
-            Active workspaces
-          </h2>
-        </div>
-
-        <div className="flex flex-col">
-          <AnimatePresence mode="popLayout">
-            {teams.map((team) => {
-              return (
-                <m.div
-                  animate={{ opacity: 1 }}
-                  className="group flex min-h-24 items-center justify-between border-b border-border py-5 transition-colors hover:bg-muted/40"
-                  exit={{ opacity: 0 }}
-                  initial={{ opacity: 0 }}
-                  key={team.teamId}
-                  layout
-                  transition={{ duration: 0.12 }}
-                >
-                  <Link
-                    className="flex flex-1 items-center justify-between gap-6 pr-4"
-                    href={`/${team.teamId}`}
-                    prefetch
+        <SectionCard>
+          <SectionCardHeader>
+            <SectionCardTitle>Active workspaces</SectionCardTitle>
+          </SectionCardHeader>
+          <div className="flex flex-col divide-y divide-border">
+            <AnimatePresence mode="popLayout">
+              {teams.map((team) => {
+                return (
+                  <m.div
+                    animate={{ opacity: 1 }}
+                    className="group flex min-h-24 items-center justify-between py-5 transition-colors hover:bg-muted/40"
+                    exit={{ opacity: 0 }}
+                    initial={{ opacity: 0 }}
+                    key={team.teamId}
+                    layout
+                    transition={{ duration: 0.12 }}
                   >
-                    <div className="flex flex-col">
-                      <span className="font-display text-xl font-semibold tracking-[-0.03em] text-foreground">
-                        {team.teamName || "Team Workspace"}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {team.memberCount === 0
-                          ? "Empty"
-                          : `${team.memberCount} member${team.memberCount === 1 ? "" : "s"}`}
-                      </span>
-                    </div>
-                    <ArrowUpRight className="size-4 text-muted-foreground transition-colors group-hover:text-foreground" />
-                  </Link>
-                  <div className="flex items-center gap-1 pl-2">
-                    {team.role === "ADMIN" && (
-                      <Shield aria-hidden="true" className="size-4 text-muted-foreground" />
-                    )}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
-                        render={
-                          <Button
-                            aria-label={`More actions for ${team.teamName || "this workspace"}`}
-                            size="icon-sm"
-                            variant="ghost"
-                          />
-                        }
-                      >
-                        <MoreHorizontal className="size-4" />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" sideOffset={4}>
-                        <DropdownMenuItem
-                          disabled={isArchivePending}
-                          onClick={() => {
-                            onArchive(team);
-                          }}
+                    <Link
+                      className="flex flex-1 items-center justify-between gap-6 pr-4"
+                      href={`/${team.teamId}`}
+                      prefetch
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-display text-xl font-semibold tracking-[-0.03em] text-foreground">
+                          {team.teamName || "Team Workspace"}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {team.memberCount === 0
+                            ? "Empty"
+                            : `${team.memberCount} member${team.memberCount === 1 ? "" : "s"}`}
+                        </span>
+                      </div>
+                      <ArrowUpRight className="size-4 text-muted-foreground transition-colors group-hover:text-foreground" />
+                    </Link>
+                    <div className="flex items-center gap-1 pl-2">
+                      {team.role === "ADMIN" && (
+                        <Shield aria-hidden="true" className="size-4 text-muted-foreground" />
+                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          render={
+                            <Button
+                              aria-label={`More actions for ${team.teamName || "this workspace"}`}
+                              size="icon-sm"
+                              variant="ghost"
+                            />
+                          }
                         >
-                          <Archive />
-                          Archive
-                        </DropdownMenuItem>
-                        {team.spaceId !== null && team.spaceId !== "" && (
+                          <MoreHorizontal className="size-4" />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" sideOffset={4}>
                           <DropdownMenuItem
+                            disabled={isArchivePending}
                             onClick={() => {
-                              if (team.spaceId === null || team.spaceId === "") {
-                                return;
-                              }
-                              onRequestDelete({
-                                spaceId: team.spaceId,
-                                teamName: team.teamName,
-                              });
+                              onArchive(team);
                             }}
-                            variant="destructive"
                           >
-                            <Trash2 />
-                            Delete
+                            <Archive />
+                            Archive
                           </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </m.div>
-              );
-            })}
-          </AnimatePresence>
-        </div>
+                          {team.spaceId !== null && team.spaceId !== "" && (
+                            <DropdownMenuItem
+                              onClick={() => {
+                                if (team.spaceId === null || team.spaceId === "") {
+                                  return;
+                                }
+                                onRequestDelete({
+                                  spaceId: team.spaceId,
+                                  teamName: team.teamName,
+                                });
+                              }}
+                              variant="destructive"
+                            >
+                              <Trash2 />
+                              Delete
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </m.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
+        </SectionCard>
       </m.div>
     )}
   </AnimatePresence>
