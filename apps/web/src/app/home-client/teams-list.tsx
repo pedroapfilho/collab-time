@@ -46,7 +46,7 @@ const TeamsList = ({ isArchivePending, onArchive, onRequestDelete, teams }: Team
                 return (
                   <m.div
                     animate={{ opacity: 1 }}
-                    className="group flex min-h-24 items-center justify-between py-5 transition-colors hover:bg-muted/40"
+                    className="group relative isolate flex min-h-24 items-center justify-between py-5 before:absolute before:-inset-x-4 before:inset-y-0 before:-z-10 before:rounded-lg before:bg-transparent before:transition-colors focus-within:before:bg-muted/40 hover:before:bg-muted/40"
                     exit={{ opacity: 0 }}
                     initial={{ opacity: 0 }}
                     key={team.teamId}

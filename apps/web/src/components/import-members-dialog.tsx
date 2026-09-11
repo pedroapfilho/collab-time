@@ -108,7 +108,7 @@ const ImportMembersDialog = ({ teamId }: ImportMembersDialogProps) => {
         Import from CSV
       </DialogTrigger>
 
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="sm:max-w-2xl">
         {open && (
           <>
             <DialogHeader>

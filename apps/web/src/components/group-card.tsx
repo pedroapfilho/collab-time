@@ -124,7 +124,7 @@ const GroupCard = ({
   return (
     <div
       className={cn(
-        "group flex flex-col gap-3 py-4 text-sm transition-colors hover:bg-muted/30",
+        "group relative isolate flex flex-col gap-3 py-4 text-sm before:absolute before:-inset-x-4 before:inset-y-0 before:-z-10 before:rounded-lg before:bg-transparent before:transition-colors focus-within:before:bg-muted/30 hover:before:bg-muted/30",
         isDropTarget && "outline-2 -outline-offset-1 outline-foreground",
       )}
     >

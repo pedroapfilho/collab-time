@@ -101,7 +101,7 @@ const WorkspaceVisibilityDialog = ({
       }}
       open={open}
     >
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Sharing &amp; privacy</DialogTitle>
           <DialogDescription>

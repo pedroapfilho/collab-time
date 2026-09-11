@@ -384,7 +384,7 @@ const AddMemberDialog = ({ groups, isFirstMember, teamId }: AddMemberDialogProps
         <UserPlus className="size-4" />
         Add Team Member
       </DialogTrigger>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md">
         <AddMemberForm
           groups={groups}
           isFirstMember={isFirstMember}

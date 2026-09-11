@@ -69,7 +69,7 @@ const ArchivedTeamsList = ({
             {showArchived && (
               <m.div
                 animate={{ opacity: 1 }}
-                className="flex flex-col divide-y divide-border overflow-hidden"
+                className="-mx-4 flex flex-col divide-y divide-border overflow-hidden px-4"
                 exit={{ opacity: 0 }}
                 initial={{ opacity: 0 }}
                 key="archived-list"
@@ -81,7 +81,7 @@ const ArchivedTeamsList = ({
                     return (
                       <m.div
                         animate={{ opacity: 1 }}
-                        className="group flex items-center justify-between py-4 transition-colors hover:bg-muted/40"
+                        className="group relative isolate flex items-center justify-between py-4 before:absolute before:-inset-x-4 before:inset-y-0 before:-z-10 before:rounded-lg before:bg-transparent before:transition-colors focus-within:before:bg-muted/40 hover:before:bg-muted/40"
                         exit={{ opacity: 0 }}
                         initial={{ opacity: 0 }}
                         key={team.teamId}

@@ -68,7 +68,7 @@ const DeleteWorkspaceDialog = ({
 
   return (
     <Dialog onOpenChange={handleOpenChange} open={open}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Delete this workspace?</DialogTitle>
           <DialogDescription>
