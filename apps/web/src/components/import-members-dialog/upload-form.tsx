@@ -96,16 +96,16 @@ const UploadForm = ({ csvText, onCsvTextChange, onFileRead }: UploadFormProps) =
         value={csvText}
       />
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5">
         <button
-          className="flex items-center gap-1.5 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+          className="flex shrink-0 items-center gap-1.5 text-xs whitespace-nowrap text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
           onClick={downloadTemplate}
           type="button"
         >
           <Download className="size-3.5" />
           Download template
         </button>
-        <p className="text-xs text-muted-foreground">
+        <p className="min-w-0 text-xs text-muted-foreground">
           Columns: name, timezone, title, work_start, work_end
         </p>
       </div>

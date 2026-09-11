@@ -168,7 +168,7 @@ const MemberCard = ({
 
   return (
     <>
-      <div className="group flex flex-col gap-3 py-4 text-sm transition-colors hover:bg-muted/30">
+      <div className="group relative isolate flex flex-col gap-3 py-4 text-sm before:absolute before:-inset-x-4 before:inset-y-0 before:-z-10 before:rounded-lg before:bg-transparent before:transition-colors focus-within:before:bg-muted/30 hover:before:bg-muted/30">
         <div className="flex items-start justify-between">
           <div className="relative">
             <div className="flex size-10 items-center justify-center border border-border bg-secondary text-sm font-semibold text-secondary-foreground">

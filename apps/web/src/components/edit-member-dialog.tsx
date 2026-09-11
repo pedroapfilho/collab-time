@@ -330,7 +330,7 @@ const EditMemberDialog = ({
 }: EditMemberDialogProps) => {
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md">
         <EditMemberForm
           groups={groups}
           key={member.id}
