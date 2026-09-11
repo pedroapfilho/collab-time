@@ -1,8 +1,10 @@
 overrides:
   # Security: force patched transitive releases to clear pnpm audit advisories.
   # Each pin is the lowest patched version within the already-resolved major.
+  body-parser: "^2.3.0"
   brace-expansion: "^1.1.18"
   fast-uri: "^3.1.6"
+  js-yaml: "^4.3.2"
   mysql2: "^3.23.1"
   nanoid: "^3.3.18"
   qs: "^6.16.0"
